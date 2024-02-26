@@ -1,0 +1,40 @@
+{
+    "[css]": {
+      "editor.tabSize": 2,
+    },
+    // "It is recommended that either ESLint or cspell checks a file, but not both."
+    // https://www.npmjs.com/package/@cspell/eslint-plugin
+    "cSpell.enableFiletypes": [
+      "!javascript",
+      "!typescript",
+    ],
+    "css.format.spaceAroundSelectorSeparator": true,
+    "editor.codeActionsOnSave": [
+      "source.fixAll.eslint",
+    ],
+    "eslint.codeActionsOnSave.mode": "problems",
+    "eslint.options": {
+      "reportUnusedDisableDirectives": "error",
+    },
+    "eslint.rules.customizations": [
+      { "rule": "*", "severity": "warn" },
+    ],
+    "editor.defaultFormatter": "dprint.dprint",
+    "editor.formatOnSave": true,
+    "editor.tabSize": 2,
+    "editor.wordWrapColumn": 100,
+    "eslint.workingDirectories": [
+      "./src",
+      "./main",
+    ],
+    "files.insertFinalNewline": true,
+    "files.trimFinalNewlines": true,
+    "git.allowForcePush": true,
+    "git.inputValidationSubjectLength": 100,
+    "git.inputValidationLength": 100,
+    "javascript.preferences.quoteStyle": "single",
+    "typescript.preferences.quoteStyle": "single",
+    "scss.format.spaceAroundSelectorSeparator": true,
+    "typescript.tsdk": "node_modules/typescript/lib",
+  }
+  
