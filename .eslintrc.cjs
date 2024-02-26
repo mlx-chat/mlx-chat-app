@@ -82,6 +82,7 @@ module.exports = {
   ],
   ignorePatterns: [
     'node_modules',
+    'main',
   ],
   overrides: [
     // Config files
@@ -239,9 +240,7 @@ module.exports = {
   parser: '@typescript-eslint/parser',
   parserOptions: {
     ecmaVersion: 12,
-    parserOptions: {
-      project: ['./tsconfig.json'], // Specify it only for TypeScript files
-    },
+    project: ['./tsconfig.json'], // Specify it only for TypeScript files
     sourceType: 'module',
     tsconfigRootDir: __dirname,
   },
@@ -268,6 +267,7 @@ module.exports = {
         },
       },
     ],
+    'implicit-arrow-linebreak': 'off',
     '@typescript-eslint/consistent-type-assertions': ['error', { assertionStyle: 'never' }],
     '@typescript-eslint/consistent-type-imports': 'error',
     '@typescript-eslint/init-declarations': 'error',

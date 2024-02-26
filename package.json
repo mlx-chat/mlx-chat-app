@@ -19,7 +19,8 @@
     "electron:dev": "npm run build:main && wait-on tcp:3000 && electron .",
     "electron": "electron .",
     "pack": "npm run build && electron-builder --dir",
-    "dist": "npm run build && electron-builder"
+    "dist": "npm run build && electron-builder",
+    "lint": "npx eslint --max-warnings 0 --ext=.ts ."
   },
   "dependencies": {
     "@radix-ui/react-icons": "^1.3.0",

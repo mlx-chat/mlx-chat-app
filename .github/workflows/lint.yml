@@ -1,0 +1,22 @@
+name: PR Checks
+
+on: [pull_request]
+
+jobs:
+  lint:
+    name: Lint App
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v1
+        with:
+          fetch-depth: 1
+
+      - name: Use Node.js 16
+        uses: actions/setup-node@v1
+        with:
+          node-version: 16
+      - name: Install App Deps
+        run: npm i --ignore-scripts
+      - name: Lint App
+        run: npm run lint
