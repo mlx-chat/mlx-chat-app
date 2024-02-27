@@ -111,6 +111,7 @@ def generate_step(
     temp: 0.0,
     repetition_penalty: Optional[float] = None,
     repetition_context_size: Optional[int] = 20,
+    top_p: float = 1.0,
 ) -> Generator[Tuple[mx.array, mx.array], None, None]:
     """
     A generator producing text based on the given prompt from the model.
@@ -133,7 +134,26 @@ def generate_step(
         if temp == 0:
             token = mx.argmax(logits, axis=-1)
         else:
-            token = mx.random.categorical(logits * (1 / temp))
+            if top_p > 0 and top_p < 1.0:
+                if (
+                    logits.dtype == mx.bfloat16
+                ):  # workdaround for unable to load kernel contiguous_scan_inclusive_sum_bfloat16_bfloat16
+                    logits = logits.astype(mx.float32)
+                probs = mx.softmax(logits / temp, axis=-1)
+
+                sorted_probs = mx.sort(probs)[::-1]
+                sorted_indices = mx.argsort(probs)[::-1]
+                cumulative_probs = mx.cumsum(sorted_probs, axis=-1)
+
+                top_probs = mx.where(
+                    cumulative_probs > 1 - top_p,
+                    sorted_probs,
+                    mx.zeros_like(sorted_probs),
+                )
+                sorted_token = mx.random.categorical(mx.log(top_probs))
+                token = sorted_indices.squeeze(0)[sorted_token]
+            else:
+                token = mx.random.categorical(logits * (1 / temp))
 
         prob = softmax_logits[0, token]
         return token, prob
@@ -142,7 +162,8 @@ def generate_step(
         repetition_penalty < 0 or not isinstance(repetition_penalty, float)
     ):
         raise ValueError(
-            f"repetition_penalty must be a non-negative float, got {repetition_penalty}"
+            f"repetition_penalty must be a non-negative float, got {
+                repetition_penalty}"
         )
 
     y = prompt
@@ -182,6 +203,7 @@ def generate(
     formatter: Callable = None,
     repetition_penalty: Optional[float] = None,
     repetition_context_size: Optional[int] = None,
+    top_p: float = 1.0,
 ) -> str:
     """
     Generate text from the model.
@@ -205,6 +227,7 @@ def generate(
         print("Prompt:", prompt)
 
     prompt_tokens = mx.array(tokenizer.encode(prompt))
+    print(prompt_tokens, flush=True)
 
     tic = time.perf_counter()
     tokens = []
@@ -218,6 +241,7 @@ def generate(
             temp,
             repetition_penalty,
             repetition_context_size,
+            top_p,
         ),
         range(max_tokens),
     ):
@@ -411,7 +435,8 @@ def upload_to_hub(path: str, upload_repo: str, hf_path: str):
     from huggingface_hub import HfApi, ModelCard, logging
 
     card = ModelCard.load(hf_path)
-    card.data.tags = ["mlx"] if card.data.tags is None else card.data.tags + ["mlx"]
+    card.data.tags = [
+        "mlx"] if card.data.tags is None else card.data.tags + ["mlx"]
     card.text = f"""
 # {upload_repo}
 This model was converted to MLX format from [`{hf_path}`]().
