@@ -1,13 +1,19 @@
-import argparse
+import os
+import re
 import json
 import time
 import uuid
-from http.server import BaseHTTPRequestHandler, HTTPServer
-from typing import Optional
+import glob
+import argparse
+import random
 
 import mlx.core as mx
 import mlx.nn as nn
+
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from typing import Optional
 from transformers import PreTrainedTokenizer
+from concurrent.futures import ThreadPoolExecutor
 
 from .utils import load, generate_step
 
@@ -45,8 +51,55 @@ def create_response(chat_id, prompt, tokens, text):
             'total_tokens': len(prompt) + len(tokens),
         },
     }
-
     return response
+
+
+def manage_directory(directory: Optional[str] = None) -> Optional[str]:
+    # TODO: proper error handling if (directory does not exist/empty) or (reading fails)
+    # TODO: cache directory content
+    # TODO: handle supported file types safely
+    if directory is not None and os.path.exists(directory):
+        allowed_extensions = ['.txt', '.md', '.csv', '.json', '.xml']
+
+        def read_file(file_path):
+            _, file_extension = os.path.splitext(file_path)
+            if file_extension.lower() in allowed_extensions:
+                with open(file_path, 'r', encoding='utf-8') as file:
+                    return file.read()
+
+        files = glob.glob(os.path.join(directory, '**', '*.*'), recursive=True)
+
+        random.seed(42)
+        random.shuffle(files)
+
+        with ThreadPoolExecutor() as executor:
+            data = list(filter(None, executor.map(read_file, files)))
+
+        return '\n'.join(data)
+
+
+def format_messages(body, condition):
+    failedString = "ERROR"
+    body['messages'][-1]['content'] = f"""
+Only using the documents in the index, answer the following, Respond with just the answer, no "The answer is" or "Answer: " or anything like that.
+
+Question:
+
+{body['messages'][-1]['content']}
+
+Index:
+
+{condition}
+
+Remember, if you do not know the answer, just say "{failedString}",
+Try to give as much detail as possible, but only from what is provided within the index.
+If steps are given, you MUST ALWAYS use bullet points to list each of them them and you MUST use markdown when applicable.
+You MUST markdown when applicable.
+Only use information you can find in the index, do not make up knowledge.
+Remember, use bullet points or numbered steps to better organize your answer if applicable.
+NEVER try to make up the answer, always return "{failedString}" if you do not know the answer or it's not provided in the index.
+Never say "is not provided in the index", use "{failedString}" instead.
+    """.strip()
 
 
 class APIHandler(BaseHTTPRequestHandler):
@@ -77,6 +130,15 @@ class APIHandler(BaseHTTPRequestHandler):
     def handle_post_request(self, post_data):
         body = json.loads(post_data.decode('utf-8'))
         chat_id = f'chatcmpl-{uuid.uuid4()}'
+
+        directory = body.get('directory', None)
+        condition = manage_directory(directory)
+        condition = re.split(r'\s+|\n+', condition)
+        condition = ' '.join(condition[:2**8])
+        if condition:
+            format_messages(body, condition)
+
+        print(body, flush=True)
 
         prompt = mx.array(_tokenizer.encode(_tokenizer.apply_chat_template(
             body['messages'],
