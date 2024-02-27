@@ -52,7 +52,7 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+server/lib/
 lib64/
 parts/
 sdist/
