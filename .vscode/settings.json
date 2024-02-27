@@ -24,8 +24,7 @@
     "editor.tabSize": 2,
     "editor.wordWrapColumn": 100,
     "eslint.workingDirectories": [
-      "./src",
-      "./main",
+      "./app",
     ],
     "files.insertFinalNewline": true,
     "files.trimFinalNewlines": true,

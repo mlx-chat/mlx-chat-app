@@ -22,7 +22,7 @@ function handleSetTitle(event: any, title: string) {
 }
 
 // Python Server
-export class ServerManager {
+class ServerManager {
   private serverProcess: any | null = null;
 
   private findOpenPort(startingPort: number): Promise<number> {
