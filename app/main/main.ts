@@ -23,65 +23,76 @@ function handleSetTitle(event: any, title: string) {
 
 // Python Server
 export class ServerManager {
-    private serverProcess: any | null = null;
-  
-    private findOpenPort(startingPort: number): Promise<number> {
-      return new Promise<number>((resolve) => {
-        const server = net.createServer();
-  
-        server.listen(startingPort, () => {
-          const port = (server.address() as net.AddressInfo).port;
-          server.close(() => resolve(port));
-        });
-  
-        server.on('error', (err: any) => err.code === 'EADDRINUSE' && resolve(this.findOpenPort(startingPort + 1)));
+  private serverProcess: any | null = null;
+
+  private findOpenPort(startingPort: number): Promise<number> {
+    return new Promise<number>((resolve) => {
+      const server = net.createServer();
+
+      server.listen(startingPort, () => {
+        const port = (server.address() as net.AddressInfo).port;
+        server.close(() => resolve(port));
       });
-    }
-  
-    private runPythonServer(model: string, port: number): any {
-      const args = [`--model ${model}`, '--host 127.0.0.1', `--port ${port}`];
-      const modifiedArgs = args.flatMap(arg => arg.split(/\s+/));
-  
-      const pythonProcess = spawn('python', ['-m', 'server.server', ...modifiedArgs]);
-      pythonProcess.stdout.on('data', (data: Buffer) => console.log("Server output:", data.toString('utf8')));
-      pythonProcess.stderr.on('data', (data: Buffer) => console.log(`Server error: ${data.toString('utf8')}`));
-  
-      return pythonProcess;
-    }
-  
-    start(model: string): Promise<void> {
-      return new Promise<void>((resolve, reject) => {
-        this.stop();
-  
-        this.findOpenPort(8080).then((port) => {
-          console.log(`Starting server for model: ${model} on port: ${port}`);
-          this.serverProcess = this.runPythonServer(model, port);
-  
-          this.serverProcess.on('close', (code: number | null) => {
-            console.log(`Server process exited with code ${code}`);
-            this.serverProcess = null;
-          });
-  
-          this.serverProcess.on('error', (err: any) => {
-            console.error(`Error in server process: ${err}`);
-            this.serverProcess = null;
-            reject(err);
-          });
-  
-          resolve();
+
+      server.on(
+        'error',
+        (err: any) => err.code === 'EADDRINUSE' && resolve(this.findOpenPort(startingPort + 1)),
+      );
+    });
+  }
+
+  private runPythonServer(model: string, port: number): any {
+    const args = [`--model ${model}`, '--host 127.0.0.1', `--port ${port}`];
+    const modifiedArgs = args.flatMap(arg => arg.split(/\s+/));
+
+    const pythonProcess = spawn('python', ['-m', 'server.server', ...modifiedArgs], {
+      cwd: '../',
+    });
+    pythonProcess.stdout.on(
+      'data',
+      (data: Buffer) => console.log('Server output:', data.toString('utf8')),
+    );
+    pythonProcess.stderr.on(
+      'data',
+      (data: Buffer) => console.log(`Server error: ${data.toString('utf8')}`),
+    );
+
+    return pythonProcess;
+  }
+
+  start(model: string): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      this.stop();
+
+      this.findOpenPort(8080).then((port) => {
+        console.log(`Starting server for model: ${model} on port: ${port}`);
+        this.serverProcess = this.runPythonServer(model, port);
+
+        this.serverProcess.on('close', (code: number | null) => {
+          console.log(`Server process exited with code ${code}`);
+          this.serverProcess = null;
         });
+
+        this.serverProcess.on('error', (err: any) => {
+          console.error(`Error in server process: ${err}`);
+          this.serverProcess = null;
+          reject(err);
+        });
+
+        resolve();
       });
-    }
-  
-    stop(): void {
-      if (this.serverProcess) {
-        console.log('Stopping the server...');
-        this.serverProcess.kill();
-        this.serverProcess = null;
-      }
+    });
+  }
+
+  stop(): void {
+    if (this.serverProcess) {
+      console.log('Stopping the server...');
+      this.serverProcess.kill();
+      this.serverProcess = null;
     }
   }
-  
+}
+
 // Loading Screen
 let splash: BrowserWindow | null;
 const createSplashScreen = () => {
@@ -164,7 +175,7 @@ app.whenReady().then(() => {
       .then(() => console.log('Server started successfully'))
       .catch(error => console.error('Error starting server:', error));
   });
-  
+
   createSplashScreen();
 
   // createWindow();

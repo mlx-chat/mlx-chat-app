@@ -1,7 +1,6 @@
 'use client';
 
 import React, {
-  useCallback,
   useEffect,
   useState,
 } from 'react';
@@ -24,25 +23,25 @@ import {
 export default function Home() {
   const [selectedDirectory, setSelectedDirectory] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
-  const [chatHistory, setChatHistory] = useState<{ role: string; content: any }[]>([]);
+  const [chatHistory, setChatHistory] = useState<{ role: string; content: string | null; }[]>([]);
   const [selectedModel, setSelectedModel] = useState<string | null>(null);
 
   function handleOpen() {
-    if (typeof window !== 'undefined' && global?.window) {
+    if (typeof window !== 'undefined') {
       window.electronAPI.selectDirectory();
     }
   }
 
   useEffect(() => {
-    window.electronAPI.onSelectDirectory(customData => {
+    window.electronAPI.onSelectDirectory((customData) => {
       setSelectedDirectory(customData[0]);
     });
   }, []);
 
-  const handleModelChange = (selectedModel: string | null) => {
-    setSelectedModel(selectedModel);
-    if (typeof window !== 'undefined' && global?.window && selectedModel) {
-      window.electronAPI.startServer(selectedModel);
+  const handleModelChange = (model: string | null) => {
+    setSelectedModel(model);
+    if (typeof window !== 'undefined' && model) {
+      window.electronAPI.startServer(model);
     }
   };
 
@@ -63,13 +62,13 @@ export default function Home() {
           body: JSON.stringify({
             messages: newHistory,
             temperature: 0.0,
-            max_tokens: 10,
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            max_tokens: 100,
           }),
         });
 
         const responseData = await response.json();
         const assistantResponse = responseData.choices[0].message.content;
-        console.log(assistantResponse);
 
         setChatHistory([
           ...newHistory,
@@ -78,9 +77,9 @@ export default function Home() {
 
         setMessage('');
       } catch (error) {
+        // eslint-disable-next-line no-console
         console.error('Error fetching data:', error);
       }
-      console.log(chatHistory);
     }
   };
 
@@ -124,19 +123,32 @@ export default function Home() {
         </div>
       </div>
       <div className='flex-grow min-w-full bg-slate-100 rounded-sm dark:bg-zinc-900 border flex'>
-        {chatHistory.length ? (<div className='flex flex-col flex-grow gap-4 p-4'>
-          {chatHistory.map((chat, index) => (
-            <div key={index} className={`flex ${chat.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-              <div className={`p-4 rounded-sm ${chat.role === 'user' ? 'bg-slate-200 dark:bg-zinc-800' : 'bg-slate-300 dark:bg-zinc-700'}`}>
-                <p>{chat.content}</p>
-              </div>
+        {chatHistory.length
+          ? (
+            <div className='flex flex-col flex-grow gap-4 p-4'>
+              {chatHistory.map((chat, index) => (
+                <div
+                  key={index}
+                  className={`flex ${chat.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div
+                    className={`p-4 rounded-sm ${
+                      chat.role === 'user'
+                        ? 'bg-slate-200 dark:bg-zinc-800'
+                        : 'bg-slate-300 dark:bg-zinc-700'
+                    }`}
+                  >
+                    <p>{chat.content}</p>
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>) : (
-          <div className='flex justify-center items-center min-h-full align-middle flex-grow'>
-            <h1 className='text-md text-zinc-500 dark:text-zinc-500'>No messages yet</h1>
-          </div>
-        )}
+          )
+          : (
+            <div className='flex justify-center items-center min-h-full align-middle flex-grow'>
+              <h1 className='text-md text-zinc-500 dark:text-zinc-500'>No messages yet</h1>
+            </div>
+          )}
       </div>
       <div className='flex justify-center'>
         <Input

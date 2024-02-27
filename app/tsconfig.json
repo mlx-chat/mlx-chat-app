@@ -38,6 +38,7 @@
     "main/preload.ts",
     "main/main.ts",
     "out/types/**/*.ts",
+    ".eslintrc.cjs",
   ],
   "exclude": [
     "node_modules",
