@@ -16,7 +16,10 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: 16
+
       - name: Install App Deps
         run: npm i --ignore-scripts
+        working-directory: ./app
       - name: Lint App
+        working-directory: ./app
         run: npm run lint
