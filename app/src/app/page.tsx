@@ -25,6 +25,7 @@ export default function Home() {
   const [message, setMessage] = useState<string | null>(null);
   const [chatHistory, setChatHistory] = useState<{ role: string; content: string | null; }[]>([]);
   const [selectedModel, setSelectedModel] = useState<string | null>(null);
+  const messagesRef = React.useRef<HTMLDivElement>(null);
 
   function handleOpen() {
     if (typeof window !== 'undefined') {
@@ -44,6 +45,30 @@ export default function Home() {
       window.electronAPI.startServer(model);
     }
   };
+
+  const scrollToBottom = () => {
+    const scrollHeight = messagesRef.current?.scrollHeight;
+    const height = messagesRef.current?.clientHeight ?? 0;
+    const maxScrollTop = scrollHeight ? scrollHeight - height : 0;
+    if (messagesRef.current) {
+      messagesRef.current.scrollTop = maxScrollTop > 0 ? maxScrollTop : 0;
+    }
+  };
+
+  useEffect(() => {
+    // check if the user is not at the bottom of the chat
+    const currentScroll = messagesRef.current?.scrollTop ?? 0;
+    const scrollHeight = messagesRef.current?.scrollHeight;
+    const height = messagesRef.current?.clientHeight ?? 0;
+    const maxScrollTop = scrollHeight ? scrollHeight - height : 0;
+    const scrollInHistory = (maxScrollTop - currentScroll) > 200;
+
+    if (scrollInHistory && chatHistory[chatHistory.length - 1]?.role !== 'user') {
+      return;
+    }
+
+    scrollToBottom();
+  }, [chatHistory]);
 
   const sendMessage = async (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
@@ -123,10 +148,10 @@ export default function Home() {
           </div>
         </div>
       </div>
-      <div className='flex-grow min-w-full bg-slate-100 rounded-sm dark:bg-zinc-900 border flex'>
+      <div className='flex-grow min-w-full bg-slate-100 rounded-sm dark:bg-zinc-900 border flex h-[1px]'>
         {chatHistory.length
           ? (
-            <div className='flex flex-col flex-grow gap-4 p-4'>
+            <div ref={messagesRef} className='flex flex-col flex-grow gap-4 p-4 overflow-y-scroll'>
               {chatHistory.map((chat, index) => (
                 <div
                   key={index}
