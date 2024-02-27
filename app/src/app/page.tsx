@@ -60,10 +60,11 @@ export default function Home() {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            messages: newHistory,
+            messages: [{ role: 'user', content: message }],
             temperature: 0.0,
             // eslint-disable-next-line @typescript-eslint/naming-convention
             max_tokens: 100,
+            ...(selectedDirectory !== null && { directory: selectedDirectory }),
           }),
         });
 
