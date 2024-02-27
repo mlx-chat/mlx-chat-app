@@ -14,6 +14,7 @@ export const electronAPI = {
       cb(customData);
     });
   },
+  startServer: (model: string) => ipcRenderer.send('start-server', model),
 };
 
 contextBridge.exposeInMainWorld('electronAPI', electronAPI);
