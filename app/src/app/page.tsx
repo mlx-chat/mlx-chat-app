@@ -4,6 +4,7 @@ import React, {
   useEffect,
   useState,
 } from 'react';
+import Chat from '../components/chat/Chat';
 import {
   Button,
 } from '../components/ui/button';
@@ -22,10 +23,7 @@ import {
 
 export default function Home() {
   const [selectedDirectory, setSelectedDirectory] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
-  const [chatHistory, setChatHistory] = useState<{ role: string; content: string | null; }[]>([]);
   const [selectedModel, setSelectedModel] = useState<string | null>(null);
-  const messagesRef = React.useRef<HTMLDivElement>(null);
 
   function handleOpen() {
     if (typeof window !== 'undefined') {
@@ -43,69 +41,6 @@ export default function Home() {
     setSelectedModel(model);
     if (typeof window !== 'undefined' && model) {
       window.electronAPI.startServer(model);
-    }
-  };
-
-  const scrollToBottom = () => {
-    const scrollHeight = messagesRef.current?.scrollHeight;
-    const height = messagesRef.current?.clientHeight ?? 0;
-    const maxScrollTop = scrollHeight ? scrollHeight - height : 0;
-    if (messagesRef.current) {
-      messagesRef.current.scrollTop = maxScrollTop > 0 ? maxScrollTop : 0;
-    }
-  };
-
-  useEffect(() => {
-    // check if the user is not at the bottom of the chat
-    const currentScroll = messagesRef.current?.scrollTop ?? 0;
-    const scrollHeight = messagesRef.current?.scrollHeight;
-    const height = messagesRef.current?.clientHeight ?? 0;
-    const maxScrollTop = scrollHeight ? scrollHeight - height : 0;
-    const scrollInHistory = (maxScrollTop - currentScroll) > 200;
-
-    if (scrollInHistory && chatHistory[chatHistory.length - 1]?.role !== 'user') {
-      return;
-    }
-
-    scrollToBottom();
-  }, [chatHistory]);
-
-  const sendMessage = async (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      try {
-        const newHistory = [
-          ...chatHistory,
-          { role: 'user', content: message },
-        ];
-        setChatHistory(newHistory);
-        const response = await fetch('http://localhost:8080/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            messages: [{ role: 'user', content: message }],
-            temperature: 0.0,
-            // eslint-disable-next-line @typescript-eslint/naming-convention
-            max_tokens: 100,
-            ...(selectedDirectory !== null && { directory: selectedDirectory }),
-          }),
-        });
-
-        const responseData = await response.json();
-        const assistantResponse = responseData.choices[0].message.content;
-
-        setChatHistory([
-          ...newHistory,
-          { role: 'assistant', content: assistantResponse },
-        ]);
-
-        setMessage('');
-      } catch (error) {
-        // eslint-disable-next-line no-console
-        console.error('Error fetching data:', error);
-      }
     }
   };
 
@@ -148,42 +83,7 @@ export default function Home() {
           </div>
         </div>
       </div>
-      <div className='flex-grow min-w-full bg-slate-100 rounded-sm dark:bg-zinc-900 border flex h-[1px]'>
-        {chatHistory.length
-          ? (
-            <div ref={messagesRef} className='flex flex-col flex-grow gap-4 p-4 overflow-y-scroll'>
-              {chatHistory.map((chat, index) => (
-                <div
-                  key={index}
-                  className={`flex ${chat.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div
-                    className={`p-4 rounded-sm ${
-                      chat.role === 'user'
-                        ? 'bg-slate-200 dark:bg-zinc-800'
-                        : 'bg-slate-300 dark:bg-zinc-700'
-                    }`}
-                  >
-                    <p>{chat.content}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )
-          : (
-            <div className='flex justify-center items-center min-h-full align-middle flex-grow'>
-              <h1 className='text-md text-zinc-500 dark:text-zinc-500'>No messages yet</h1>
-            </div>
-          )}
-      </div>
-      <div className='flex justify-center'>
-        <Input
-          value={message ?? ''}
-          onChange={(e) => setMessage(e.target.value)}
-          placeholder='Enter prompt here'
-          onKeyDown={sendMessage}
-        />
-      </div>
+      <Chat selectedDirectory={selectedDirectory} />
     </main>
   );
 }

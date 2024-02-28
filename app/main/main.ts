@@ -4,7 +4,9 @@ import {
   app,
   BrowserWindow,
   dialog,
+  globalShortcut,
   ipcMain,
+  Menu,
 } from 'electron';
 
 import * as net from 'net';
@@ -125,6 +127,10 @@ if (isProd) {
 }
 
 const createWindow = () => {
+  if (process.platform === 'darwin') {
+    app.dock.hide();
+  }
+
   const win = new BrowserWindow({
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -139,9 +145,12 @@ const createWindow = () => {
     titleBarOverlay: {
       height: 20,
     },
+    type: 'panel',
   });
+  win.setAlwaysOnTop(true, 'screen-saver');
+  win.setVisibleOnAllWorkspaces(true);
 
-  win.webContents.openDevTools();
+  // win.webContents.openDevTools();
 
   // Expose URL
   if (isProd) {
@@ -157,6 +166,30 @@ const createWindow = () => {
       splash.close();
     }
     win.show();
+    globalShortcut.register('Cmd+O', () => {
+      if (win.isFocused()) {
+        win.blur();
+        return;
+      }
+      win.show();
+    });
+    globalShortcut.register('Escape', () => {
+      win.blur();
+      win.hide();
+      Menu.sendActionToFirstResponder('hide:');
+    });
+  });
+
+  // @ts-expect-error -- We don't have types for electron
+  win.on('blur', (event) => {
+    // event.preventDefault();
+    win.hide();
+    Menu.sendActionToFirstResponder('hide:');
+  });
+
+  win.on('close', (event) => {
+    event.preventDefault();
+    win.hide();
   });
 };
 
@@ -188,6 +221,7 @@ app.whenReady().then(() => {
   });
 });
 
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') { app.quit(); }
+// @ts-expect-error -- We don't have types for electron
+app.on('window-all-closed', (event) => {
+  event.preventDefault();
 });
