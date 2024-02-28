@@ -12,7 +12,6 @@ from typing import (
     Callable,
     Iterable,
     Optional,
-    Literal,
     Tuple,
     Type,
 )
@@ -20,6 +19,8 @@ from typing import (
 import chromadb
 import chromadb.config
 from chromadb.api.types import ID, OneOrMany, Where, WhereDocument
+
+from .embeddings import Embeddings
 
 Chroma = TypeVar('Chroma', bound='Chroma')
 
@@ -116,26 +117,6 @@ def maximal_marginal_relevance(
         selected = mx.concatenate([
             selected, embedding_list[idx_to_add:idx_to_add+1]], axis=0)
     return idxs
-
-
-class Embeddings():
-
-    type: Literal["Embeddings"] = "Embeddings"
-
-    def __init__(self, model, tokenizer):
-        self.model = model
-        self.tokenizer = tokenizer
-
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        return [self.embed_query(text) for text in texts]
-
-    def embed_query(self,  text: str) -> List[float]:
-        h = self.model.embed_tokens(mx.array(
-            self.tokenizer.encode(text, add_special_tokens=False)))
-        # normalized to have unit length
-        h = mx.mean(h, axis=0)
-        h = h / mx.linalg.norm(h)
-        return h.tolist()
 
 
 class Chroma():
