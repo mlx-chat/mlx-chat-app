@@ -44,10 +44,10 @@ const ChatMessages = ({
             className={`flex ${chat.role === 'user' ? 'justify-end' : 'justify-start'}`}
           >
             <div
-              className={`p-4 rounded-sm ${
+              className={`p-2 rounded-sm ${
                 chat.role === 'user'
-                  ? 'bg-slate-200 dark:bg-zinc-800'
-                  : 'bg-slate-300 dark:bg-zinc-700'
+                  ? 'bg-[#E9E9EB] dark:bg-zinc-500'
+                  : 'bg-slate-300 dark:bg-zinc-600'
               }`}
             >
               <p>{chat.content}</p>
@@ -56,11 +56,7 @@ const ChatMessages = ({
         ))}
       </div>
     )
-    : (
-      <div className='flex justify-center items-center min-h-full align-middle flex-grow'>
-        <h1 className='text-md text-zinc-500 dark:text-zinc-500'>No messages yet</h1>
-      </div>
-    );
+    : null;
 };
 
 export default ChatMessages;

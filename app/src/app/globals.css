@@ -56,7 +56,7 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply text-foreground;
     /* font-feature-settings: "rlig" 1, "calt" 1; */
     font-synthesis-weight: none;
     text-rendering: optimizeLegibility;
@@ -83,9 +83,6 @@
 
 /* Update scrollbar when in dark mode */
 @media screen and (prefers-color-scheme: dark) {
-  ::-webkit-scrollbar {
-    width: 7px;
-  }
   ::-webkit-scrollbar-thumb {
     background-color: hsl(var(--muted));
     border-radius: 5px;
@@ -94,7 +91,27 @@
   ::-webkit-scrollbar-thumb:hover {
     background-color: hsl(255, 4%, 20%);
   }
-  ::-webkit-scrollbar-track {
-    background-color: transparent;
+}
+
+/* Update scrollbar when in light mode */
+@media screen and (prefers-color-scheme: light) {
+  ::-webkit-scrollbar-thumb {
+    background-color: rgb(38 38 38);
+    border-radius: 5px;
+    transition: all;
   }
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(255, 4%, 20%);
+  }
+}
+
+::-webkit-scrollbar {
+  width: 7px;
+}
+::-webkit-scrollbar-track {
+  background-color: transparent;
+}
+
+html {
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont;
 }

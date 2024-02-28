@@ -1,6 +1,9 @@
 import React, {
   useState,
 } from 'react';
+import {
+  cn,
+} from '../../lib/utils';
 import ChatInput from './ChatInput';
 import ChatMessages from './ChatMessages';
 
@@ -12,6 +15,9 @@ const Chat = ({
   const [chatHistory, setChatHistory] = useState<{ role: string; content: string | null; }[]>([]);
   const sendMessage = async (message: string) => {
     try {
+      if (chatHistory.length === 0) {
+        window.electronAPI.resizeWindow(500);
+      }
       const newHistory = [
         ...chatHistory,
         { role: 'user', content: message },
@@ -46,10 +52,21 @@ const Chat = ({
 
   return (
     <>
-      <div className='flex justify-center'>
+      <div
+        className={cn('flex justify-center border-b-neutral-400 dark:border-b-neutral-700', {
+          'border-b': chatHistory.length > 0,
+        })}
+      >
         <ChatInput sendMessage={sendMessage} />
       </div>
-      <div className='flex-grow min-w-full bg-slate-100 rounded-sm dark:bg-zinc-900 border flex h-[1px]'>
+      <div
+        className={cn(
+          'flex-grow min-w-full rounded-sm border-0 flex h-0',
+          {
+            'border h-[400px]': chatHistory.length > 0,
+          },
+        )}
+      >
         <ChatMessages chatHistory={chatHistory} />
       </div>
     </>
