@@ -7,11 +7,7 @@ import {
 import ChatInput from './ChatInput';
 import ChatMessages from './ChatMessages';
 
-const Chat = ({
-  selectedDirectory,
-}: {
-  selectedDirectory: string | null;
-}) => {
+const Chat = () => {
   const [chatHistory, setChatHistory] = useState<{ role: string; content: string | null; }[]>([]);
   const sendMessage = async (message: string) => {
     try {
@@ -23,7 +19,7 @@ const Chat = ({
         { role: 'user', content: message },
       ];
       setChatHistory(newHistory);
-      const response = await fetch('http://localhost:8080/v1/chat/completions', {
+      const response = await fetch('http://localhost:8080/api/query', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -33,7 +29,6 @@ const Chat = ({
           temperature: 0.0,
           // eslint-disable-next-line @typescript-eslint/naming-convention
           max_tokens: 100,
-          ...(selectedDirectory !== null && { directory: selectedDirectory }),
         }),
       });
 
