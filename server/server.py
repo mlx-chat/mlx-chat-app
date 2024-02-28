@@ -14,7 +14,8 @@ from .utils import load, generate_step
 
 from .retriever.loader import directory_loader
 from .retriever.splitter import RecursiveCharacterTextSplitter
-from .retriever.vectorstore import Chroma, Embeddings
+from .retriever.vectorstore import Chroma
+from .retriever.embeddings import ChatEmbeddings, E5Embeddings
 
 _model: Optional[nn.Module] = None
 _tokenizer: Optional[PreTrainedTokenizer] = None
@@ -27,16 +28,20 @@ def load_model(model_path: str, adapter_file: Optional[str] = None):
     _model, _tokenizer = load(model_path, adapter_file=adapter_file)
 
 
-def load_database(directory: str):
+def load_database(directory: str, use_embedding: bool = True):
     global _database
     # TODO: handle error from directory_loader on invalid
     raw_docs = directory_loader(directory)
     text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=4000, chunk_overlap=200, add_start_index=True
+        chunk_size=512, chunk_overlap=32, add_start_index=True
     )
+    embedding = E5Embeddings() if use_embedding else ChatEmbeddings(
+        model=_model.model, tokenizer=_tokenizer)
     splits = text_splitter.split_documents(raw_docs)
     _database = Chroma.from_documents(
-        documents=splits, embedding=Embeddings(_model.model, _tokenizer))
+        documents=splits,
+        embedding=embedding
+    )
 
 
 def create_response(chat_id, prompt, tokens, text):
@@ -66,24 +71,23 @@ def create_response(chat_id, prompt, tokens, text):
     return response
 
 
-def format_messages(messages, condition):
+def format_messages(messages, context):
     failedString = "ERROR"
-    if condition:
+    if context:
         messages[-1]['content'] = f"""
-Only using the documents in the index, answer the following, Respond with just the answer, no "The answer is" or "Answer: " or anything like that.
+Only using the documents in the index, answer the following, respond with just the answer without "The answer is:" or "Answer:" or anything like that.
 
-Question:
-
+<BEGIN_QUESTION>
 {messages[-1]['content']}
+</END_QUESTION>
 
-Index:
-
-{condition}
+<BEGIN_INDEX>
+{context}
+</END_INDEX>
 
 Remember, if you do not know the answer, just say "{failedString}",
 Try to give as much detail as possible, but only from what is provided within the index.
 If steps are given, you MUST ALWAYS use bullet points to list each of them them and you MUST use markdown when applicable.
-You MUST markdown when applicable.
 Only use information you can find in the index, do not make up knowledge.
 Remember, use bullet points or numbered steps to better organize your answer if applicable.
 NEVER try to make up the answer, always return "{failedString}" if you do not know the answer or it's not provided in the index.
@@ -122,9 +126,11 @@ class APIHandler(BaseHTTPRequestHandler):
         chat_id = f'chatcmpl-{uuid.uuid4()}'
 
         load_database(body.get('directory', None))
-        # emperically better than similarity_search
+        # emperically better than `similarity_search`
         docs = _database.max_marginal_relevance_search(
-            body['messages'][-1]['content'])
+            body['messages'][-1]['content'],
+            k=4  # number of documents to return
+        )
         context = '\n'.join([doc.page_content for doc in docs])
         print(body, flush=True)
         print(('\n'+'--'*10+'\n').join([
