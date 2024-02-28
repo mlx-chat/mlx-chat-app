@@ -21,7 +21,7 @@
     ],
     "editor.defaultFormatter": "dprint.dprint",
     "editor.formatOnSave": true,
-    "editor.tabSize": 2,
+    "editor.tabSize": 4,
     "editor.wordWrapColumn": 100,
     "eslint.workingDirectories": [
       "./app",
