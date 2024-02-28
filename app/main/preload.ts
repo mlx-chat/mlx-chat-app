@@ -15,6 +15,7 @@ export const electronAPI = {
     });
   },
   startServer: (model: string) => ipcRenderer.send('start-server', model),
+  resizeWindow: (height: number) => ipcRenderer.send('resize-window', { height }),
 };
 
 contextBridge.exposeInMainWorld('electronAPI', electronAPI);

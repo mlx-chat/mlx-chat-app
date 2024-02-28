@@ -4,7 +4,11 @@ import {
   app,
   BrowserWindow,
   dialog,
+  globalShortcut,
   ipcMain,
+  Menu,
+  nativeImage,
+  Tray,
 } from 'electron';
 
 import * as net from 'net';
@@ -104,6 +108,8 @@ const createSplashScreen = () => {
       focusable: false,
       /// remove the window frame, so it will become a frameless window
       frame: false,
+      skipTaskbar: true,
+      autoHideMenuBar: true,
     },
   );
   splash.setResizable(false);
@@ -124,24 +130,35 @@ if (isProd) {
   app.setPath('userData', `${app.getPath('userData')} (development)`);
 }
 
+let directoryOpen = false;
+
 const createWindow = () => {
+  const icon = nativeImage.createFromPath('path/to/asset.png');
+  let tray = new Tray(icon);
+  tray.setTitle('M');
+
   const win = new BrowserWindow({
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       devTools: !isProd,
     },
     show: false,
-    width: 1000,
-    height: 800,
-    minHeight: 800,
-    minWidth: 1000,
-    titleBarStyle: 'hidden',
-    titleBarOverlay: {
-      height: 20,
-    },
+    width: 600,
+    height: 99,
+    resizable: false,
+    type: 'panel',
+    frame: false,
+    skipTaskbar: true,
+    autoHideMenuBar: true,
+    vibrancy: 'under-window', // on MacOS
+    backgroundMaterial: 'acrylic',
   });
+  app.dock.hide();
+  win.setWindowButtonVisibility(false);
+  win.setAlwaysOnTop(true, 'floating');
+  win.setVisibleOnAllWorkspaces(true);
 
-  win.webContents.openDevTools();
+  // win.webContents.openDevTools();
 
   // Expose URL
   if (isProd) {
@@ -151,19 +168,68 @@ const createWindow = () => {
     win.loadURL('http://localhost:3000/');
   }
 
+  tray.addListener('click', () => {
+    if (win.isFocused()) {
+      return;
+    }
+    win.show();
+  });
+
   win.webContents.on('did-finish-load', () => {
     /// then close the loading screen window and show the main window
     if (splash) {
       splash.close();
     }
     win.show();
+    globalShortcut.register('Cmd+O', () => {
+      if (win.isFocused()) {
+        win.blur();
+        return;
+      }
+      win.show();
+    });
+  });
+
+  // @ts-expect-error -- We don't have types for electron
+  win.on('blur', (event) => {
+    if (directoryOpen) {
+      win.setAlwaysOnTop(false);
+      return;
+    }
+
+    globalShortcut.unregister('Escape');
+    win.hide();
+    Menu.sendActionToFirstResponder('hide:');
+  });
+
+  win.on('focus', () => {
+    globalShortcut.register('Escape', () => {
+      if (!win.isFocused()) {
+        return;
+      }
+      win.blur();
+    });
+  });
+
+  win.on('close', (event) => {
+    event.preventDefault();
+    win.hide();
   });
 };
 
 app.whenReady().then(() => {
+  if (process.platform == 'darwin') {
+    app.dock.hide();
+  }
   ipcMain.on('set-title', handleSetTitle);
   ipcMain.on('select-directory', (event: any) => {
+    directoryOpen = true;
     dialog.showOpenDialog({ properties: ['openDirectory'] }).then((result: any) => {
+      const win = BrowserWindow.fromWebContents(event.sender);
+      // Weird hack to bring the window to the front after allowing windows in front of it
+      win?.setAlwaysOnTop(true, 'floating');
+
+      directoryOpen = false;
       event.sender.send('selected-directory', result.filePaths);
     });
   });
@@ -176,9 +242,18 @@ app.whenReady().then(() => {
       .catch(error => console.error('Error starting server:', error));
   });
 
+  ipcMain.on('resize-window', (event, arg) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (!win) {
+      return;
+    }
+    win.setBounds({
+      height: arg.height,
+    });
+  });
+
   createSplashScreen();
 
-  // createWindow();
   setTimeout(() => {
     createWindow();
   }, 2000);
@@ -188,6 +263,7 @@ app.whenReady().then(() => {
   });
 });
 
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') { app.quit(); }
+// @ts-expect-error -- We don't have types for electron
+app.on('window-all-closed', (event) => {
+  event.preventDefault();
 });
