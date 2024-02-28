@@ -1,6 +1,7 @@
 {
-    "[css]": {
-      "editor.tabSize": 2,
+    "[python]": {
+      "editor.tabSize": 4,
+      "editor.defaultFormatter": "ms-python.autopep8",
     },
     // "It is recommended that either ESLint or cspell checks a file, but not both."
     // https://www.npmjs.com/package/@cspell/eslint-plugin

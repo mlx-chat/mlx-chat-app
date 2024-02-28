@@ -1,11 +1,7 @@
-import os
-import re
 import json
 import time
 import uuid
-import glob
 import argparse
-import random
 
 import mlx.core as mx
 import mlx.nn as nn
@@ -13,18 +9,34 @@ import mlx.nn as nn
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from typing import Optional
 from transformers import PreTrainedTokenizer
-from concurrent.futures import ThreadPoolExecutor
 
 from .utils import load, generate_step
 
+from .retriever.loader import directory_loader
+from .retriever.splitter import RecursiveCharacterTextSplitter
+from .retriever.vectorstore import Chroma, Embeddings
+
 _model: Optional[nn.Module] = None
 _tokenizer: Optional[PreTrainedTokenizer] = None
+_database: Optional[Chroma] = None
 
 
 def load_model(model_path: str, adapter_file: Optional[str] = None):
     global _model
     global _tokenizer
     _model, _tokenizer = load(model_path, adapter_file=adapter_file)
+
+
+def load_database(directory: str):
+    global _database
+    # TODO: handle error from directory_loader on invalid
+    raw_docs = directory_loader(directory)
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=4000, chunk_overlap=200, add_start_index=True
+    )
+    splits = text_splitter.split_documents(raw_docs)
+    _database = Chroma.from_documents(
+        documents=splits, embedding=Embeddings(_model.model, _tokenizer))
 
 
 def create_response(chat_id, prompt, tokens, text):
@@ -54,38 +66,15 @@ def create_response(chat_id, prompt, tokens, text):
     return response
 
 
-def manage_directory(directory: Optional[str] = None) -> Optional[str]:
-    # TODO: proper error handling if (directory does not exist/empty) or (reading fails)
-    # TODO: cache directory content
-    # TODO: handle supported file types safely
-    if directory is not None and os.path.exists(directory):
-        allowed_extensions = ['.txt', '.md', '.csv', '.json', '.xml']
-
-        def read_file(file_path):
-            _, file_extension = os.path.splitext(file_path)
-            if file_extension.lower() in allowed_extensions:
-                with open(file_path, 'r', encoding='utf-8') as file:
-                    return file.read()
-
-        files = glob.glob(os.path.join(directory, '**', '*.*'), recursive=True)
-
-        random.seed(42)
-        random.shuffle(files)
-
-        with ThreadPoolExecutor() as executor:
-            data = list(filter(None, executor.map(read_file, files)))
-
-        return '\n'.join(data)
-
-
-def format_messages(body, condition):
+def format_messages(messages, condition):
     failedString = "ERROR"
-    body['messages'][-1]['content'] = f"""
+    if condition:
+        messages[-1]['content'] = f"""
 Only using the documents in the index, answer the following, Respond with just the answer, no "The answer is" or "Answer: " or anything like that.
 
 Question:
 
-{body['messages'][-1]['content']}
+{messages[-1]['content']}
 
 Index:
 
@@ -100,6 +89,7 @@ Remember, use bullet points or numbered steps to better organize your answer if 
 NEVER try to make up the answer, always return "{failedString}" if you do not know the answer or it's not provided in the index.
 Never say "is not provided in the index", use "{failedString}" instead.
     """.strip()
+    return messages
 
 
 class APIHandler(BaseHTTPRequestHandler):
@@ -131,17 +121,17 @@ class APIHandler(BaseHTTPRequestHandler):
         body = json.loads(post_data.decode('utf-8'))
         chat_id = f'chatcmpl-{uuid.uuid4()}'
 
-        directory = body.get('directory', None)
-        condition = manage_directory(directory)
-        condition = re.split(r'\s+|\n+', condition)
-        condition = ' '.join(condition[:2**8])
-        if condition:
-            format_messages(body, condition)
-
+        load_database(body.get('directory', None))
+        # emperically better than similarity_search
+        docs = _database.max_marginal_relevance_search(
+            body['messages'][-1]['content'])
+        context = '\n'.join([doc.page_content for doc in docs])
         print(body, flush=True)
+        print(('\n'+'--'*10+'\n').join([
+            f'{doc.metadata}\n{doc.page_content}' for doc in docs]), flush=True)
 
         prompt = mx.array(_tokenizer.encode(_tokenizer.apply_chat_template(
-            body['messages'],
+            format_messages(body['messages'], context),
             tokenize=False,
             add_generation_prompt=True,
         ), add_special_tokens=True))
