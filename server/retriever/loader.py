@@ -20,3 +20,5 @@ def directory_loader(directory: Optional[str] = None) -> Optional[List[Document]
 
         with ThreadPoolExecutor() as executor:
             return list(filter(None, executor.map(read_file, files)))
+    else:
+        raise FileNotFoundError(f"Directory '{directory}' does not exist.")

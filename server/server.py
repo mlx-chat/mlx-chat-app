@@ -28,9 +28,8 @@ def load_model(model_path: str, adapter_file: Optional[str] = None):
     _model, _tokenizer = load(model_path, adapter_file=adapter_file)
 
 
-def load_database(directory: str, use_embedding: bool = True):
+def index_directory(directory: str, use_embedding: bool = True):
     global _database
-    # TODO: handle error from directory_loader on invalid
     raw_docs = directory_loader(directory)
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=512, chunk_overlap=32, add_start_index=True
@@ -109,23 +108,60 @@ class APIHandler(BaseHTTPRequestHandler):
         self._set_headers(204)
 
     def do_POST(self):
-        if self.path == '/v1/chat/completions':
-            content_length = int(self.headers['Content-Length'])
-            post_data = self.rfile.read(content_length)
+        """
+        Endpoint: /api/index
+            Desc: indexes the directory
+            Body:
+                {
+                    directory: str
+                }
+
+        Endpoint: /api/query
+            Desc: handles messages requests (with directory index)
+            Body:
+                {
+                    messages: [ { role: str, content: str } ],
+                    max_tokens: int,
+                    repetition_penalty: float,
+                    repetition_context_size: int,
+                    temperature: float,
+                    top_p: float,
+                }
+        """
+        try:
+            post_data = self.rfile.read(int(self.headers['Content-Length']))
+            body = json.loads(post_data.decode('utf-8'))
+            method = {
+                '/api/index': self.index,
+                '/api/query': self.query,
+            }
+            handle = method.get(self.path, None)
+            if handle is None:
+                self._set_headers(404)
+                self.wfile.write(b'Not Found')
+                return
+
+            response = handle(body)
             self._set_headers(200)
-
-            response = self.handle_post_request(post_data)
-
             self.wfile.write(json.dumps(response).encode('utf-8'))
-        else:
-            self._set_headers(404)
-            self.wfile.write(b'Not Found')
 
-    def handle_post_request(self, post_data):
-        body = json.loads(post_data.decode('utf-8'))
+        except Exception as e:
+            print(f"Error: {e}", flush=True)
+            self._set_headers(500)
+            self.wfile.write(json.dumps({'error': str(e)}).encode('utf-8'))
+
+    def index(self, body):
+        directory = body.get('directory', None)
+        index_directory(directory)
+        return {'directory': directory}
+
+    def query(self, body):
         chat_id = f'chatcmpl-{uuid.uuid4()}'
 
-        load_database(body.get('directory', None))
+        # check that directory is indexed
+        if _database is None:
+            raise ValueError('Index the directory first')
+
         # emperically better than `similarity_search`
         docs = _database.max_marginal_relevance_search(
             body['messages'][-1]['content'],
@@ -145,7 +181,7 @@ class APIHandler(BaseHTTPRequestHandler):
         max_tokens = body.get('max_tokens', 100)
         repetition_penalty = body.get('repetition_penalty', None)
         repetition_context_size = body.get('repetition_context_size', 20)
-        temperature = body.get('temperature', 0.0)
+        temperature = body.get('temperature', 1.0)
         top_p = body.get('top_p', 1.0)
 
         tokens = []
@@ -204,5 +240,5 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     load_model(args.model, adapter_file=args.adapter_file)
-
+    print(f'>> starting server on {args.host}:{args.port}', flush=True)
     run(args.host, args.port)

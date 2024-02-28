@@ -19,8 +19,23 @@ export default function Home() {
   }
 
   useEffect(() => {
-    window.electronAPI.onSelectDirectory((customData) => {
+    window.electronAPI.onSelectDirectory(async (customData) => {
       setSelectedDirectory(customData[0]);
+      try {
+        await fetch('http://localhost:8080/api/index', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            directory: customData[0],
+          }),
+        });
+        // TODO: spinner while indexing
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error('Error sending message: ', error);
+      }
     });
   }, []);
 
@@ -33,7 +48,7 @@ export default function Home() {
 
   return (
     <main className='flex flex-col'>
-      <Chat selectedDirectory={selectedDirectory} />
+      <Chat />
       <div className='border-t border-t-neutral-400 dark:border-t-neutral-700 pt-[5px] px-2'>
         <div className='flex justify-between'>
           <SelectModel selectedModel={selectedModel} handleModelChange={handleModelChange} />
