@@ -250,6 +250,7 @@ app.whenReady().then(() => {
     win.setBounds({
       height: arg.height,
     });
+    win.center();
   });
 
   createSplashScreen();
