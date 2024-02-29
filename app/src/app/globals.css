@@ -115,3 +115,11 @@
 html {
   font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont;
 }
+
+ol,
+ul,
+menu {
+  list-style: outside;
+  margin: 0;
+  padding-left: 20px;
+}

@@ -1,9 +1,19 @@
+import {
+  faCircleNotch,
+} from '@fortawesome/free-solid-svg-icons';
+import {
+  FontAwesomeIcon,
+} from '@fortawesome/react-fontawesome';
 import React, {
   useEffect,
 } from 'react';
 import type {
   ChatMessage,
 } from '../../constants/chat';
+import {
+  useAppSelector,
+} from '../../lib/hooks';
+import Message from './ChatMessage';
 
 const ChatMessages = ({
   chatHistory,
@@ -20,6 +30,8 @@ const ChatMessages = ({
       messagesRef.current.scrollTop = maxScrollTop > 0 ? maxScrollTop : 0;
     }
   };
+
+  const isWaitingForResponse = useAppSelector((state) => state.isWaitingForResponse);
 
   useEffect(() => {
     // check if the user is not at the bottom of the chat
@@ -38,22 +50,27 @@ const ChatMessages = ({
   return chatHistory.length
     ? (
       <div ref={messagesRef} className='flex flex-col flex-grow gap-4 p-4 overflow-y-scroll'>
-        {chatHistory.map((chat, index) => (
-          <div
+        {chatHistory.map((message, index) => (
+          <Message
             key={index}
-            className={`flex ${chat.role === 'user' ? 'justify-end' : 'justify-start'}`}
-          >
-            <div
-              className={`p-2 rounded-sm ${
-                chat.role === 'user'
-                  ? 'bg-[#E9E9EB] dark:bg-zinc-500'
-                  : 'bg-slate-300 dark:bg-zinc-600'
-              }`}
-            >
-              <p>{chat.content}</p>
-            </div>
-          </div>
+            message={message}
+          />
         ))}
+        {isWaitingForResponse
+          ? (
+            <div
+              className={'flex justify-start'}
+            >
+              <div
+                className={'p-2 rounded-sm'}
+              >
+                <div className='text-md select-text'>
+                  <FontAwesomeIcon className='animate-spin' icon={faCircleNotch} />
+                </div>
+              </div>
+            </div>
+          )
+          : null}
       </div>
     )
     : null;

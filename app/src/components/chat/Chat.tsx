@@ -2,6 +2,13 @@ import React, {
   useState,
 } from 'react';
 import {
+  useAppDispatch,
+} from '../../lib/hooks';
+import {
+  startWaitingForResponse,
+  stopWaitingForResponse,
+} from '../../lib/store';
+import {
   cn,
 } from '../../lib/utils';
 import ChatInput from './ChatInput';
@@ -9,6 +16,7 @@ import ChatMessages from './ChatMessages';
 
 const Chat = () => {
   const [chatHistory, setChatHistory] = useState<{ role: string; content: string | null; }[]>([]);
+  const dispatch = useAppDispatch();
   const sendMessage = async (message: string) => {
     try {
       if (chatHistory.length === 0) {
@@ -19,6 +27,7 @@ const Chat = () => {
         { role: 'user', content: message },
       ];
       setChatHistory(newHistory);
+      dispatch(startWaitingForResponse());
       const response = await fetch('http://localhost:8080/api/query', {
         method: 'POST',
         headers: {
@@ -31,6 +40,7 @@ const Chat = () => {
           max_tokens: 100,
         }),
       });
+      dispatch(stopWaitingForResponse());
 
       const responseData = await response.json();
       const assistantResponse = responseData.choices[0].message.content;
@@ -40,6 +50,7 @@ const Chat = () => {
         { role: 'assistant', content: assistantResponse },
       ]);
     } catch (error) {
+      dispatch(stopWaitingForResponse());
       // eslint-disable-next-line no-console
       console.error('Error sending message: ', error);
     }

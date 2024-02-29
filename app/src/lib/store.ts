@@ -7,6 +7,7 @@ const globalSlice = createSlice({
   name: 'global',
   initialState: {
     isDirectoryIndexing: false,
+    isWaitingForResponse: false,
   },
   reducers: {
     startDirectoryIndexing: (state) => {
@@ -17,12 +18,22 @@ const globalSlice = createSlice({
       // eslint-disable-next-line no-param-reassign
       state.isDirectoryIndexing = false;
     },
+    startWaitingForResponse: (state) => {
+      // eslint-disable-next-line no-param-reassign
+      state.isWaitingForResponse = true;
+    },
+    stopWaitingForResponse: (state) => {
+      // eslint-disable-next-line no-param-reassign
+      state.isWaitingForResponse = false;
+    },
   },
 });
 
 export const {
   startDirectoryIndexing,
   stopDirectoryIndexing,
+  startWaitingForResponse,
+  stopWaitingForResponse,
 } = globalSlice.actions;
 
 export const makeStore = () =>
