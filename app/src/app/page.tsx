@@ -7,10 +7,19 @@ import React, {
 import Chat from '../components/chat/Chat';
 import SelectDirectory from '../components/options/SelectDirectory';
 import SelectModel from '../components/options/SelectModel';
+import {
+  useAppDispatch,
+} from '../lib/hooks';
+import {
+  startDirectoryIndexing,
+  stopDirectoryIndexing,
+} from '../lib/store';
 
 export default function Home() {
   const [selectedDirectory, setSelectedDirectory] = useState<string | null>(null);
   const [selectedModel, setSelectedModel] = useState<string | null>(null);
+
+  const dispatch = useAppDispatch();
 
   function handleOpen() {
     if (typeof window !== 'undefined') {
@@ -22,6 +31,7 @@ export default function Home() {
     window.electronAPI.onSelectDirectory(async (customData) => {
       setSelectedDirectory(customData[0]);
       try {
+        dispatch(startDirectoryIndexing());
         await fetch('http://localhost:8080/api/index', {
           method: 'POST',
           headers: {
@@ -31,10 +41,12 @@ export default function Home() {
             directory: customData[0],
           }),
         });
+        dispatch(stopDirectoryIndexing());
         // TODO: spinner while indexing
       } catch (error) {
         // eslint-disable-next-line no-console
         console.error('Error sending message: ', error);
+        dispatch(stopDirectoryIndexing());
       }
     });
   }, []);
