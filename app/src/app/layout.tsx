@@ -1,5 +1,6 @@
 'use client';
 
+import StoreProvider from '../AppProvider';
 import './globals.css';
 
 export default function RootLayout({
@@ -15,7 +16,9 @@ export default function RootLayout({
           userSelect: 'none',
         }}
       >
-        {children}
+        <StoreProvider>
+          {children}
+        </StoreProvider>
       </body>
     </html>
   );

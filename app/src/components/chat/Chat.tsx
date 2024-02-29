@@ -56,9 +56,9 @@ const Chat = () => {
       </div>
       <div
         className={cn(
-          'flex-grow min-w-full rounded-sm border-0 flex h-0',
+          'flex-grow min-w-full border-0 flex h-0',
           {
-            'border h-[400px]': chatHistory.length > 0,
+            'h-[400px]': chatHistory.length > 0,
           },
         )}
       >
