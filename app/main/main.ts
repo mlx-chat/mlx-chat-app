@@ -10,7 +10,7 @@ import {
   nativeImage,
   Tray,
 } from 'electron';
-
+import Store from 'electron-store';
 import * as net from 'net';
 
 const path = require('path');
@@ -132,6 +132,28 @@ if (isProd) {
 
 let directoryOpen = false;
 
+let globalWindow: BrowserWindow | null = null;
+
+const triggerShortcut = () => {
+  if (directoryOpen || !globalWindow) {
+    return;
+  }
+  if (globalWindow.isFocused()) {
+    globalWindow.blur();
+    return;
+  }
+  globalWindow.show();
+};
+
+const store = new Store({
+  schema: {
+    keybind: {
+      type: 'string',
+      default: 'Cmd+O',
+    },
+  },
+});
+
 const createWindow = () => {
   const icon = nativeImage.createFromPath('path/to/asset.png');
   let tray = new Tray(icon);
@@ -153,12 +175,10 @@ const createWindow = () => {
     vibrancy: 'under-window', // on MacOS
     backgroundMaterial: 'acrylic',
   });
-  app.dock.hide();
+  globalWindow = win;
   win.setWindowButtonVisibility(false);
   win.setAlwaysOnTop(true, 'floating');
   win.setVisibleOnAllWorkspaces(true);
-
-  // win.webContents.openDevTools();
 
   // Expose URL
   if (isProd) {
@@ -182,24 +202,20 @@ const createWindow = () => {
       splash.close();
     }
     win.show();
-    globalShortcut.register('Cmd+O', () => {
-      if (win.isFocused()) {
-        win.blur();
-        return;
-      }
-      win.show();
-    });
+    globalShortcut.register(store.get('keybind') as string, triggerShortcut.bind(null));
   });
 
   // @ts-expect-error -- We don't have types for electron
   win.on('blur', (event) => {
     if (directoryOpen) {
       win.setAlwaysOnTop(false);
+    }
+    globalShortcut.unregister('Escape');
+    win.hide();
+    if (directoryOpen) {
       return;
     }
 
-    globalShortcut.unregister('Escape');
-    win.hide();
     Menu.sendActionToFirstResponder('hide:');
   });
 
@@ -216,12 +232,66 @@ const createWindow = () => {
     event.preventDefault();
     win.hide();
   });
+  let settingsModal: BrowserWindow | null = null;
+
+  const createSettings = () => {
+    settingsModal = new BrowserWindow({
+      webPreferences: {
+        preload: path.join(__dirname, 'preload.js'),
+      },
+      width: 500,
+      height: 500,
+      resizable: false,
+      minimizable: false,
+      titleBarStyle: 'hidden',
+      show: false,
+      backgroundColor: '#000',
+    });
+
+    if (isProd) {
+      settingsModal.loadURL('app://./home.html');
+    } else {
+      // const port = process.argv[2];
+      settingsModal.loadURL('http://localhost:3000/settings');
+    }
+
+    settingsModal.on('closed', () => {
+      directoryOpen = false;
+      settingsModal?.destroy();
+      settingsModal = null;
+    });
+
+    settingsModal.on('ready-to-show', () => {
+      settingsModal?.show();
+    });
+
+    return settingsModal;
+  };
+
+  const nativeMenus: (Electron.MenuItemConstructorOptions | Electron.MenuItem)[] = [
+    {
+      label: 'MLX Chat',
+      submenu: [
+        {
+          label: 'Settings',
+          click() {
+            directoryOpen = true;
+            if (settingsModal !== null) {
+              settingsModal.close();
+            }
+            createSettings();
+          },
+          accelerator: 'Cmd+,',
+        },
+      ],
+    },
+  ];
+
+  const menu = Menu.buildFromTemplate(nativeMenus);
+  Menu.setApplicationMenu(menu);
 };
 
 app.whenReady().then(() => {
-  if (process.platform == 'darwin') {
-    app.dock.hide();
-  }
   ipcMain.on('set-title', handleSetTitle);
   ipcMain.on('select-directory', (event: any) => {
     directoryOpen = true;
@@ -254,6 +324,18 @@ app.whenReady().then(() => {
     win.center();
   });
 
+  ipcMain.on('fetch-setting', (event, arg) => {
+    event.returnValue = store.get(arg);
+  });
+
+  ipcMain.on('update-setting', (_event, arg) => {
+    if (arg.key === 'keybind') {
+      globalShortcut.unregister(store.get('keybind') as string);
+      globalShortcut.register(arg.value, triggerShortcut.bind(null));
+    }
+    store.set(arg.key, arg.value);
+  });
+
   createSplashScreen();
 
   setTimeout(() => {
@@ -269,3 +351,49 @@ app.whenReady().then(() => {
 app.on('window-all-closed', (event) => {
   event.preventDefault();
 });
+
+const nativeMenus = [
+  {
+    label: 'Settings',
+    submenu: [
+      {
+        label: 'Settings',
+        click() {
+          openSettings();
+          directoryOpen = true;
+        },
+      },
+    ],
+  },
+];
+
+function openSettings() {
+  const newWindow = new BrowserWindow({
+    height: 185,
+    resizable: false,
+    width: 270,
+    title: 'Settings',
+    minimizable: false,
+    fullscreenable: false,
+  });
+
+  if (isProd) {
+    newWindow.loadURL('app://./home.html');
+  } else {
+    // const port = process.argv[2];
+    newWindow.loadURL('http://localhost:3000/settings');
+  }
+
+  newWindow.on('closed', () => {
+    directoryOpen = false;
+    newWindow.destroy();
+  });
+
+  newWindow.on('hide', () => {
+    directoryOpen = false;
+    newWindow.destroy();
+  });
+}
+
+const menu = Menu.buildFromTemplate(nativeMenus);
+Menu.setApplicationMenu(menu);

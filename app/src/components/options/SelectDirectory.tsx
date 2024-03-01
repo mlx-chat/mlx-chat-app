@@ -45,7 +45,7 @@ const SelectDirectory = ({
   }, [isDirectoryIndexing]);
 
   return (
-    <div className='flex'>
+    <div className='flex no-drag'>
       <Button
         className={cn(
           'bg-transparent text-neutral-800 dark:text-white text-sm font-normal shadow-none hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-all border-0 border-zinc-600 w-fit rounded-md py-1 px-3 flex items-center cursor-pointer',

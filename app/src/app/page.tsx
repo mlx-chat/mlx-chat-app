@@ -62,7 +62,7 @@ export default function Home() {
     <main className='flex flex-col'>
       <Chat />
       <div className='border-t border-t-neutral-400 dark:border-t-neutral-700 pt-[5px] px-2'>
-        <div className='flex justify-between'>
+        <div className='flex justify-between drag'>
           <SelectModel selectedModel={selectedModel} handleModelChange={handleModelChange} />
           <SelectDirectory handleOpen={handleOpen} selectedDirectory={selectedDirectory} />
         </div>
