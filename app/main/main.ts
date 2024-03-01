@@ -170,6 +170,7 @@ const createWindow = () => {
 
   tray.addListener('click', () => {
     if (win.isFocused()) {
+      win.blur();
       return;
     }
     win.show();
