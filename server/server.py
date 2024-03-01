@@ -30,6 +30,7 @@ def load_model(model_path: str, adapter_file: Optional[str] = None):
 
 def index_directory(directory: str, use_embedding: bool = True):
     global _database
+    start_t = time.time()
     raw_docs = directory_loader(directory)
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=512, chunk_overlap=32, add_start_index=True
@@ -41,6 +42,8 @@ def index_directory(directory: str, use_embedding: bool = True):
         documents=splits,
         embedding=embedding
     )
+    print(f'>> indexed {len(splits)} documents in',
+          f'{time.time() - start_t:.2f}s', flush=True)
 
 
 def create_response(chat_id, prompt, tokens, text):

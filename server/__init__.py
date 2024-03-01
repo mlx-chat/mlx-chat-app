@@ -1,4 +1,3 @@
-from .convert import convert
-from .utils import generate, load
+from .utils import generate, load, convert
 
 __version__ = "0.0.14"
