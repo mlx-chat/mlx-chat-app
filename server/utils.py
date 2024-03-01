@@ -1,6 +1,7 @@
+import os
 import copy
-import gc
 import glob
+import shutil
 import importlib
 import json
 import logging
@@ -10,6 +11,8 @@ from typing import Any, Callable, Dict, Generator, List, Optional, Tuple, Union
 
 import mlx.core as mx
 import mlx.nn as nn
+from mlx.utils import tree_flatten
+
 from huggingface_hub import snapshot_download
 from transformers import AutoConfig, AutoTokenizer, PreTrainedTokenizer
 
@@ -44,7 +47,7 @@ def _get_classes(config: dict):
     model_type = config["model_type"]
     model_type = MODEL_REMAPPING.get(model_type, model_type)
     try:
-        arch = importlib.import_module(f"mlx_lm.models.{model_type}")
+        arch = importlib.import_module(f"server.models.{model_type}")
     except ImportError:
         msg = f"Model type {model_type} not supported."
         logging.error(msg)
@@ -493,7 +496,7 @@ def save_weights(
     # necessary ones
     if donate_weights:
         weights.clear()
-        gc.collect()
+        del weights
 
     for i in range(len(shards)):
         shard = shards[i]
@@ -506,7 +509,6 @@ def save_weights(
         for weight_name in shard.keys():
             index_data["weight_map"][weight_name] = shard_name
         del shard
-        gc.collect()
 
     index_data["weight_map"] = {
         k: index_data["weight_map"][k] for k in sorted(index_data["weight_map"])
@@ -518,3 +520,88 @@ def save_weights(
             f,
             indent=4,
         )
+
+
+def quantize_model(
+    model: nn.Module, config: dict, q_group_size: int, q_bits: int
+) -> Tuple:
+    """
+    Applies quantization to the model weights.
+
+    Args:
+        model (nn.Module): The model to be quantized.
+        config (dict): Model configuration.
+        q_group_size (int): Group size for quantization.
+        q_bits (int): Bits per weight for quantization.
+
+    Returns:
+        Tuple: Tuple containing quantized weights and config.
+    """
+    quantized_config = copy.deepcopy(config)
+
+    nn.QuantizedLinear.quantize_module(
+        model, q_group_size, q_bits, linear_class_predicate=linear_class_predicate
+    )
+    quantized_config["quantization"] = {
+        "group_size": q_group_size, "bits": q_bits}
+    quantized_weights = dict(tree_flatten(model.parameters()))
+
+    return quantized_weights, quantized_config
+
+
+def get_mlx_path(hf_path: str) -> str:
+    default_home = os.path.join(os.path.expanduser("~"), ".cache")
+    return os.path.join(
+        default_home, 'huggingface', 'hub', f'models--{hf_path.replace("/", "--")}-mlx')
+
+
+def convert(
+    hf_path: str,
+    mlx_path: str = None,
+    quantize: bool = False,
+    q_group_size: int = 64,
+    q_bits: int = 4,
+    dtype: str = "float16",
+    upload_repo: str = None,
+    delete_old: bool = True,
+):
+    print("[INFO] Loading")
+    model_path = get_model_path(hf_path)
+    print(model_path, flush=True)
+    model, config, tokenizer = fetch_from_hub(model_path, lazy=True)
+
+    weights = dict(tree_flatten(model.parameters()))
+    dtype = mx.float16 if quantize else getattr(mx, dtype)
+    weights = {k: v.astype(dtype) for k, v in weights.items()}
+
+    if quantize:
+        print("[INFO] Quantizing")
+        model.load_weights(list(weights.items()))
+        weights, config = quantize_model(model, config, q_group_size, q_bits)
+
+    if mlx_path is None:
+        mlx_path = get_mlx_path(hf_path)
+
+    if isinstance(mlx_path, str):
+        mlx_path = Path(mlx_path)
+
+    print(f"[INFO] Saving to {mlx_path}")
+
+    del model
+    save_weights(mlx_path, weights, donate_weights=True)
+
+    py_files = glob.glob(str(model_path / "*.py"))
+    for file in py_files:
+        shutil.copy(file, mlx_path)
+
+    tokenizer.save_pretrained(mlx_path)
+
+    with open(mlx_path / "config.json", "w") as fid:
+        json.dump(config, fid, indent=4)
+
+    if upload_repo is not None:
+        upload_to_hub(mlx_path, upload_repo, hf_path)
+
+    if delete_old:
+        path_components = str(model_path).split(os.path.sep)
+        shutil.rmtree(os.path.sep.join(path_components[:-2]))
