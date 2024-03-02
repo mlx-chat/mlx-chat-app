@@ -45,16 +45,11 @@ const ChatInput = ({
 
   return (
     <div
-      className='w-full py-2'
+      className='w-full py-2 drag'
       onClick={() => {
         if (document.activeElement !== inputRef.current) {
           inputRef.current?.focus();
         }
-      }}
-      style={{
-        // @ts-expect-error -- WebkitAppRegion is a valid property
-        // eslint-disable-next-line @typescript-eslint/naming-convention
-        WebkitAppRegion: 'drag',
       }}
     >
       <Input
@@ -64,12 +59,7 @@ const ChatInput = ({
         onKeyDown={handleSend}
         ref={inputRef}
         disabled={isDirectoryIndexing}
-        className={'text-xl border-0 focus-visible:outline-transparent focus-visible:ring-0 focus-visible:shadow-0 w-full shadow-0'}
-        style={{
-          // @ts-expect-error -- WebkitAppRegion is a valid property
-          // eslint-disable-next-line @typescript-eslint/naming-convention
-          WebkitAppRegion: 'no-drag',
-        }}
+        className={'text-xl no-drag border-0 focus-visible:outline-transparent focus-visible:ring-0 focus-visible:shadow-0 w-full shadow-0'}
       />
     </div>
   );

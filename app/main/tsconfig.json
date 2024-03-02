@@ -17,9 +17,9 @@
     "skipLibCheck": true,
     "strict": true,
     "target": "esnext",
-    "outDir": "./out"
+    "outDir": "./out",
   },
   "compileOnSave": true,
   "exclude": ["node_modules", "./out/**/*"],
-  "include": ["**/*.ts", "**/*.tsx", "**/*.js"]
+  "include": ["**/*.ts", "**/*.tsx", "**/*.js", "public/**.icns"],
 }

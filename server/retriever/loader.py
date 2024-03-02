@@ -8,7 +8,7 @@ from .document import Document
 
 def directory_loader(directory: Optional[str] = None) -> Optional[List[Document]]:
     if directory is not None and os.path.exists(directory):
-        allowed_extensions = ['.txt', '.md', '.csv', '.json', '.xml']
+        allowed_extensions = ['.txt', '.md', '.csv', '.json', '.xml', '.ts']
 
         def read_file(file_path):
             _, file_extension = os.path.splitext(file_path)
