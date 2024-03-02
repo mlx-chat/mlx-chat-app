@@ -6,7 +6,6 @@ import React, {
 } from 'react';
 import Chat from '../components/chat/Chat';
 import SelectDirectory from '../components/options/SelectDirectory';
-import SelectModel from '../components/options/SelectModel';
 import {
   useAppDispatch,
 } from '../lib/hooks';
@@ -17,7 +16,6 @@ import {
 
 export default function Home() {
   const [selectedDirectory, setSelectedDirectory] = useState<string | null>(null);
-  const [selectedModel, setSelectedModel] = useState<string | null>(null);
 
   const dispatch = useAppDispatch();
 
@@ -51,19 +49,11 @@ export default function Home() {
     });
   }, []);
 
-  const handleModelChange = (model: string | null) => {
-    setSelectedModel(model);
-    if (typeof window !== 'undefined' && model) {
-      window.electronAPI.startServer(model);
-    }
-  };
-
   return (
     <main className='flex flex-col'>
       <Chat />
       <div className='border-t border-t-neutral-400 dark:border-t-neutral-700 pt-[5px] px-2'>
-        <div className='flex justify-between drag'>
-          <SelectModel selectedModel={selectedModel} handleModelChange={handleModelChange} />
+        <div className='flex justify-end drag'>
           <SelectDirectory handleOpen={handleOpen} selectedDirectory={selectedDirectory} />
         </div>
       </div>

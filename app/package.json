@@ -100,10 +100,20 @@
       "category": "your.app.category.type",
       "target": [
         "dmg"
-      ]
+      ],
+      "icon": "assets/icon.icns"
     },
     "dmg": {
       "title": "MLX Chat Installer"
-    }
+    },
+    "extraFiles": [
+      {
+        "from": "assets",
+        "to": "resources",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ]
   }
 }

@@ -13,6 +13,10 @@ import {
 import React, {
   useEffect,
 } from 'react';
+import SelectModel from '../../components/options/SelectModel';
+import {
+  Textarea,
+} from '../../components/ui/textarea';
 import {
   convertToNiceShortcut,
   useKeyboardShortcut,
@@ -72,7 +76,12 @@ function GeneralSettings() {
   } = useKeyboardShortcut();
 
   const [keybind, setKeybind] = React.useState<string>(
-    window.electronAPI.fetchSetting('keybind'),
+    typeof window !== 'undefined' ? window.electronAPI.fetchSetting('keybind') : '⌘O',
+  );
+  const [model, setModel] = React.useState<string>(
+    typeof window !== 'undefined'
+      ? window.electronAPI.fetchSetting('model')
+      : 'mlx-community/quantized-gemma-7b-it',
   );
 
   useEffect(() => {
@@ -94,7 +103,22 @@ function GeneralSettings() {
           onFocus={startListening}
           onBlur={() => {
             stopListening();
-            window.electronAPI.updateSetting('keybind', shortcut);
+            if (typeof window !== 'undefined') {
+              window.electronAPI.updateSetting('keybind', shortcut);
+            }
+          }}
+        />
+      </div>
+      <div className='flex items-center mt-2'>
+        <p className='text-sm mr-2'>Default model:</p>
+        <SelectModel
+          selectedModel={model}
+          handleModelChange={(selectedModel) => {
+            setModel(selectedModel);
+            if (typeof window !== 'undefined' && selectedModel) {
+              window.electronAPI.startServer(selectedModel);
+              window.electronAPI.updateSetting('model', selectedModel);
+            }
           }}
         />
       </div>
@@ -103,9 +127,27 @@ function GeneralSettings() {
 }
 
 function PromptSettings() {
+  const [instructions, setInstructions] = React.useState<string>(
+    typeof window !== 'undefined' ? window.electronAPI.fetchSetting('customInstructions') : '',
+  );
+
   return (
-    <div>
-      <h1>Prompt Settings</h1>
+    <div className='flex flex-col justify-center w-full items-center'>
+      <div className='flex flex-col items-center mt-2 gap-2'>
+        <p className='text-sm flex-shrink-0 font-bold'>Custom Instructions</p>
+        <Textarea
+          className='bg-[#C9C9C9] dark:bg-[#252523] border-[#B5B5B5] dark:border-[#3B3B39] border resize-none w-[300px]'
+          value={instructions}
+          onChange={(e) => {
+            setInstructions(e.target.value);
+            if (typeof window !== 'undefined') {
+              window.electronAPI.updateSetting('customInstructions', e.target.value);
+            }
+          }}
+          rows={5}
+          placeholder='Type your custom instructions here...'
+        />
+      </div>
     </div>
   );
 }
@@ -114,7 +156,7 @@ export default function Settings() {
   const [selectedSetting, setSelectedSetting] = React.useState<SETTINGS>(SETTINGS.GENERAL);
 
   return (
-    <main className='flex flex-col dark:bg-[#383736] h-screen'>
+    <main className='flex flex-col bg-[#F1F1F1] dark:bg-[#383736] h-screen'>
       <div className='h-[81px] border-0 border-b border-b-neutral-300 dark:border-b-zinc-950 drag flex flex-col'>
         <h1 className='text-[12px] font-bold text-[#6C6C6C] dark:text-[#9C9C9B] text-center pt-1'>
           {selectedSetting === SETTINGS.GENERAL

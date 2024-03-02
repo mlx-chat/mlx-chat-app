@@ -14,14 +14,14 @@ const SelectModel = ({
   handleModelChange,
 }: {
   selectedModel: string | null;
-  handleModelChange: (model: string | null) => void;
+  handleModelChange: (model: string) => void;
 }) => (
   <div className='no-drag'>
     <Select
       value={selectedModel ?? ''}
       onValueChange={(value) => handleModelChange(value)}
     >
-      <SelectTrigger className='py-1 w-fit border-none shadow-transparent hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-all border border-zinc-600 focus:ring-0 focus-within:ring-0 focus-visible:ring-0 peer-focus-within:ring-0 text-neutral-800 dark:text-white'>
+      <SelectTrigger className='a-icon w-[140px] h-5 border-none shadow-transparent bg-white dark:bg-[#606160] transition-all border border-zinc-600 focus:ring-0 focus-within:ring-0 focus-visible:ring-0 peer-focus-within:ring-0 text-neutral-800 dark:text-white'>
         <SelectValue placeholder='Select a model' />
       </SelectTrigger>
       <SelectContent>
