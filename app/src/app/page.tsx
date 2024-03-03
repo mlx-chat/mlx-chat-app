@@ -51,7 +51,7 @@ export default function Home() {
 
   return (
     <main className='flex flex-col'>
-      <Chat />
+      <Chat selectedDirectory={selectedDirectory} />
       <div className='border-t border-t-neutral-400 dark:border-t-neutral-700 pt-[5px] px-2'>
         <div className='flex justify-end drag'>
           <SelectDirectory handleOpen={handleOpen} selectedDirectory={selectedDirectory} />

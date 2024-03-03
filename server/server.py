@@ -1,5 +1,4 @@
 import json
-import os
 import time
 import uuid
 import sys
@@ -137,6 +136,7 @@ class APIHandler(BaseHTTPRequestHandler):
                     repetition_context_size: int,
                     temperature: float,
                     top_p: float,
+                    directory: str
                 }
         """
         try:
@@ -175,22 +175,25 @@ class APIHandler(BaseHTTPRequestHandler):
     def query(self, body):
         chat_id = f'chatcmpl-{uuid.uuid4()}'
 
-        # check that directory is indexed
-        if _database is None:
-            raise ValueError('Index the directory first')
+        directory = body.get('directory', None)
+        messages = body.get('messages', [])
 
-        # emperically better than `similarity_search`
-        docs = _database.max_marginal_relevance_search(
-            body['messages'][-1]['content'],
-            k=4  # number of documents to return
-        )
-        context = '\n'.join([doc.page_content for doc in docs])
-        print(body, flush=True)
-        print(('\n'+'--'*10+'\n').join([
-            f'{doc.metadata}\n{doc.page_content}' for doc in docs]), flush=True)
+        if directory:
+            # emperically better than `similarity_search`
+            docs = _database.max_marginal_relevance_search(
+                body['messages'][-1]['content'],
+                k=4  # number of documents to return
+            )
+            context = '\n'.join([doc.page_content for doc in docs])
+            format_messages(body['messages'], context)
 
+            print(body, flush=True)
+            print(('\n'+'--'*10+'\n').join([
+                f'{doc.metadata}\n{doc.page_content}' for doc in docs]), flush=True)
+
+        print(messages, flush=True)
         prompt = mx.array(_tokenizer.encode(_tokenizer.apply_chat_template(
-            format_messages(body['messages'], context),
+            messages,
             tokenize=False,
             add_generation_prompt=True,
         ), add_special_tokens=True))

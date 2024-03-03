@@ -1,6 +1,7 @@
 // Main File for Electron
 
 import {
+  exec,
   execFile,
 } from 'child_process';
 import {
@@ -31,6 +32,7 @@ function handleSetTitle(event: any, title: string) {
 // Python Server
 class ServerManager {
   private serverProcess: any | null = null;
+  public port: number | null = null;
 
   private findOpenPort(startingPort: number): Promise<number> {
     return new Promise<number>((resolve) => {
@@ -51,7 +53,6 @@ class ServerManager {
   private runPythonServer(port: number): any {
     const args = ['--host 127.0.0.1', `--port ${port}`];
     const modifiedArgs = args.flatMap(arg => arg.split(/\s+/));
-
     const pythonProcess = isProd
       ? execFile(path.join(process.resourcesPath, 'server', 'runner'), modifiedArgs)
       : spawn('python', ['-m', 'server.server', ...modifiedArgs], {
@@ -74,6 +75,7 @@ class ServerManager {
       this.stop();
 
       this.findOpenPort(8080).then((port) => {
+        this.port = port;
         console.log(`APP: Starting server for model: ${model} on port: ${port}`);
         this.serverProcess = this.runPythonServer(port);
 
@@ -247,6 +249,7 @@ const createWindow = () => {
     if (splash) {
       splash.close();
     }
+    app.dock.hide();
     win.show();
     globalShortcut.register(store.get('keybind') as string, triggerShortcut.bind(null));
   });
@@ -260,6 +263,7 @@ const createWindow = () => {
       return;
     }
     globalShortcut.unregister('Escape');
+    globalShortcut.unregister('Cmd+Q');
     win.hide();
     if (openModal) {
       return;
@@ -269,6 +273,12 @@ const createWindow = () => {
   });
 
   win.on('focus', () => {
+    globalShortcut.register('Cmd+Q', () => {
+      if (!win.isFocused()) {
+        return;
+      }
+      app.quit();
+    });
     globalShortcut.register('Escape', () => {
       if (!win.isFocused()) {
         return;
@@ -277,10 +287,6 @@ const createWindow = () => {
     });
   });
 
-  win.on('close', (event) => {
-    event.preventDefault();
-    win.hide();
-  });
   let settingsModal: BrowserWindow | null = null;
 
   const createSettings = () => {
@@ -396,6 +402,20 @@ app.whenReady().then(() => {
 });
 
 // @ts-expect-error -- We don't have types for electron
-app.on('window-all-closed', (event) => {
-  event.preventDefault();
+app.on('will-quit', (event) => {
+  exec(
+    `lsof -i :${serverManager.port} -P | awk 'NR>1 {print $2}' | xargs kill`,
+    (err, stdout, stderr) => {
+      if (err) {
+        console.log(err);
+        return;
+      }
+      console.log(`stdout: ${stdout}`);
+      console.log(`stderr: ${stderr}`);
+    },
+  );
+  BrowserWindow.getAllWindows().forEach((win) => {
+    win.close();
+    win.destroy();
+  });
 });
