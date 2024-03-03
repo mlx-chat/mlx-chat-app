@@ -694,7 +694,7 @@ class BertModel(nn.Module):
         Prepare the head mask if needed.
 
         Args:
-            head_mask (`torch.Tensor` with shape `[num_heads]` or `[num_hidden_layers x num_heads]`, *optional*):
+            head_mask (`mx.Tensor` with shape `[num_heads]` or `[num_hidden_layers x num_heads]`, *optional*):
                 The mask indicating if we should keep the heads or not (1.0 for keep, 0.0 for discard).
             num_hidden_layers (`int`):
                 The number of hidden layers in the model.
@@ -702,7 +702,7 @@ class BertModel(nn.Module):
                 Whether or not the attentions scores are computed by chunks or not.
 
         Returns:
-            `torch.Tensor` with shape `[num_hidden_layers x batch x num_heads x seq_length x seq_length]` or list with
+            `mx.Tensor` with shape `[num_hidden_layers x batch x num_heads x seq_length x seq_length]` or list with
             `[None]` for each layer.
         """
         if head_mask is not None:
