@@ -14,7 +14,7 @@ import {
 import ChatInput from './ChatInput';
 import ChatMessages from './ChatMessages';
 
-const Chat = () => {
+const Chat = ({ selectedDirectory }: { selectedDirectory: string | null; }) => {
   const [chatHistory, setChatHistory] = useState<{ role: string; content: string | null; }[]>([]);
   const dispatch = useAppDispatch();
   const sendMessage = async (message: string) => {
@@ -34,10 +34,11 @@ const Chat = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          messages: [{ role: 'user', content: message }],
-          temperature: 0.0,
+          messages: selectedDirectory ? [{ role: 'user', content: message }] : newHistory,
+          temperature: 1.0,
           // eslint-disable-next-line @typescript-eslint/naming-convention
-          max_tokens: 100,
+          max_tokens: 256,
+          directory: selectedDirectory,
         }),
       });
       dispatch(stopWaitingForResponse());
