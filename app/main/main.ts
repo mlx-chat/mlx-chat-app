@@ -50,7 +50,7 @@ class ServerManager {
     const modifiedArgs = args.flatMap(arg => arg.split(/\s+/));
 
     const pythonProcess = spawn('python', ['-m', 'server.server', ...modifiedArgs], {
-      cwd: '../',
+      cwd: isProd ? process.resourcesPath : '../',
     });
     pythonProcess.stdout.on(
       'data',
@@ -280,7 +280,7 @@ const createWindow = () => {
     });
 
     if (isProd) {
-      settingsModal.loadURL('app://./home.html');
+      settingsModal.loadURL('app://./settings.html');
     } else {
       // const port = process.argv[2];
       settingsModal.loadURL('http://localhost:3000/settings');

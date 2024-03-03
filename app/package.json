@@ -23,6 +23,7 @@
     "lint": "npx eslint --max-warnings 0 --ext=.ts ."
   },
   "dependencies": {
+    "@electron/osx-sign": "^1.0.5",
     "@fortawesome/fontawesome-free": "^6.5.1",
     "@fortawesome/fontawesome-svg-core": "^6.5.1",
     "@fortawesome/free-regular-svg-icons": "^6.5.1",
@@ -67,6 +68,7 @@
     "dprint": "^0.45.0",
     "electron": "^26.2.0",
     "electron-builder": "^24.6.4",
+    "electron-notarize": "^1.2.2",
     "eslint": "^8.56.0",
     "eslint-config-airbnb-base": "^15.0.0",
     "eslint-plugin-compat": "^4.2.0",
@@ -85,6 +87,7 @@
   "build": {
     "appId": "mlx-chat",
     "productName": "MLX Chat",
+    "afterSign": "notarize.js",
     "win": {
       "target": [
         "nsis"
@@ -101,15 +104,27 @@
       "target": [
         "dmg"
       ],
-      "icon": "assets/icon.icns"
+      "gatekeeperAssess": false,
+      "hardenedRuntime": true,
+      "icon": "assets/icon.icns",
+      "entitlements": "/Users/parker/Desktop/SideProjects/mlx-chat-app/app/build/entitlements.mac.inherit.plist",
+      "entitlementsInherit": "/Users/parker/Desktop/SideProjects/mlx-chat-app/app/build/entitlements.mac.inherit.plist"
     },
     "dmg": {
-      "title": "MLX Chat Installer"
+      "title": "MLX Chat Installer",
+      "sign": false
     },
     "extraFiles": [
       {
         "from": "assets",
         "to": "resources",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "../server",
+        "to": "resources/server",
         "filter": [
           "**/*"
         ]
