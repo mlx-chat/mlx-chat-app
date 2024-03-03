@@ -1,6 +1,9 @@
 // Main File for Electron
 
 import {
+  execFile,
+} from 'child_process';
+import {
   app,
   BrowserWindow,
   dialog,
@@ -45,13 +48,17 @@ class ServerManager {
     });
   }
 
-  private runPythonServer(model: string, port: number): any {
-    const args = [`--model ${model}`, '--host 127.0.0.1', `--port ${port}`];
+  private runPythonServer(port: number): any {
+    const args = ['--host 127.0.0.1', `--port ${port}`];
     const modifiedArgs = args.flatMap(arg => arg.split(/\s+/));
 
-    const pythonProcess = spawn('python', ['-m', 'server.server', ...modifiedArgs], {
-      cwd: isProd ? process.resourcesPath : '../',
-    });
+    const pythonProcess = !isProd
+      ? execFile(path.join('dist', 'runner'), modifiedArgs, {
+        cwd: '../',
+      })
+      : spawn('python', ['-m', 'server.server', ...modifiedArgs], {
+        cwd: '../',
+      });
     pythonProcess.stdout.on(
       'data',
       (data: Buffer) => console.log('Server output:', data.toString('utf8')),
@@ -69,16 +76,29 @@ class ServerManager {
       this.stop();
 
       this.findOpenPort(8080).then((port) => {
-        console.log(`Starting server for model: ${model} on port: ${port}`);
-        this.serverProcess = this.runPythonServer(model, port);
+        console.log(`APP: Starting server for model: ${model} on port: ${port}`);
+        this.serverProcess = this.runPythonServer(port);
 
-        this.serverProcess.stdout.on('data', (data: Buffer) => {
+        this.serverProcess.stdout.on('data', async (data: Buffer) => {
           const output = data.toString('utf8');
           console.log('Server output:', output);
 
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+
           // Check if the server is ready
-          if (output.includes('starting server on')) {
-            resolve(); // Resolve the promise when the server is ready
+          if (output.includes('Starting httpd')) {
+            fetch(`http://127.0.0.1:${port}/api/init`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ model }),
+            }).then(() => {
+              resolve(); // Resolve the promise when the server is ready
+            }).catch((err) => {
+              console.error('Error initializing the server:', err);
+              reject(err);
+            });
           }
         });
 
