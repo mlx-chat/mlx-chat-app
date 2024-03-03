@@ -1,8 +1,11 @@
-from .document import Document
 import uuid
 import functools
 import mlx.core as mx
 
+import chromadb
+import chromadb.config
+
+from chromadb.utils.batch_utils import create_batches
 from chromadb.api.types import ID, OneOrMany, Where, WhereDocument
 from typing import (
     Any,
@@ -15,11 +18,7 @@ from typing import (
     Tuple,
     Type,
 )
-
-import chromadb
-import chromadb.config
-from chromadb.api.types import ID, OneOrMany, Where, WhereDocument
-
+from .document import Document
 from .embeddings import Embeddings
 
 Chroma = TypeVar('Chroma', bound='Chroma')
@@ -508,9 +507,7 @@ class Chroma():
 
         if hasattr(
             self._collection._client, "max_batch_size"
-        ):  # for Chroma 0.4.10 and above
-            from chromadb.utils.batch_utils import create_batches
-
+        ):
             for batch in create_batches(
                 api=self._collection._client,
                 ids=ids,
@@ -578,9 +575,7 @@ class Chroma():
             ids = [str(uuid.uuid1()) for _ in texts]
         if hasattr(
             chroma_collection._client, "max_batch_size"
-        ):  # for Chroma 0.4.10 and above
-            from chromadb.utils.batch_utils import create_batches
-
+        ):
             for batch in create_batches(
                 api=chroma_collection._client,
                 ids=ids,
