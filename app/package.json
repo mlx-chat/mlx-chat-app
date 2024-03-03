@@ -65,6 +65,7 @@
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",
+    "dotenv": "^16.4.5",
     "dprint": "^0.45.0",
     "electron": "^26.2.0",
     "electron-builder": "^24.6.4",
@@ -107,8 +108,8 @@
       "gatekeeperAssess": false,
       "hardenedRuntime": true,
       "icon": "assets/icon.icns",
-      "entitlements": "/Users/parker/Desktop/SideProjects/mlx-chat-app/app/build/entitlements.mac.inherit.plist",
-      "entitlementsInherit": "/Users/parker/Desktop/SideProjects/mlx-chat-app/app/build/entitlements.mac.inherit.plist"
+      "entitlements": "./mac/entitlements.mac.inherit.plist",
+      "entitlementsInherit": "./mac/entitlements.mac.inherit.plist"
     },
     "dmg": {
       "title": "MLX Chat Installer",
