@@ -52,10 +52,8 @@ class ServerManager {
     const args = ['--host 127.0.0.1', `--port ${port}`];
     const modifiedArgs = args.flatMap(arg => arg.split(/\s+/));
 
-    const pythonProcess = !isProd
-      ? execFile(path.join('dist', 'runner'), modifiedArgs, {
-        cwd: '../',
-      })
+    const pythonProcess = isProd
+      ? execFile(path.join(process.resourcesPath, 'server', 'runner'), modifiedArgs)
       : spawn('python', ['-m', 'server.server', ...modifiedArgs], {
         cwd: '../',
       });
