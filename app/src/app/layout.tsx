@@ -7,6 +7,9 @@ import '@fortawesome/fontawesome-svg-core/styles.css';
 import {
   config,
 } from '@fortawesome/fontawesome-svg-core';
+import {
+  TooltipProvider,
+} from '../components/ui/tooltip';
 
 config.autoAddCss = false;
 
@@ -23,9 +26,11 @@ export default function RootLayout({
           userSelect: 'none',
         }}
       >
-        <StoreProvider>
-          {children}
-        </StoreProvider>
+        <TooltipProvider>
+          <StoreProvider>
+            {children}
+          </StoreProvider>
+        </TooltipProvider>
       </body>
     </html>
   );

@@ -1,6 +1,7 @@
-import React, {
-  useState,
-} from 'react';
+import React from 'react';
+import type {
+  ChatMessage,
+} from '../../constants/chat';
 import {
   useAppDispatch,
 } from '../../lib/hooks';
@@ -14,8 +15,15 @@ import {
 import ChatInput from './ChatInput';
 import ChatMessages from './ChatMessages';
 
-const Chat = ({ selectedDirectory }: { selectedDirectory: string | null; }) => {
-  const [chatHistory, setChatHistory] = useState<{ role: string; content: string | null; }[]>([]);
+const Chat = ({
+  selectedDirectory,
+  chatHistory,
+  setChatHistory,
+}: {
+  selectedDirectory: string | null;
+  chatHistory: ChatMessage[];
+  setChatHistory: (chats: ChatMessage[]) => void;
+}) => {
   const dispatch = useAppDispatch();
   const sendMessage = async (message: string) => {
     try {
@@ -39,6 +47,14 @@ const Chat = ({ selectedDirectory }: { selectedDirectory: string | null; }) => {
           // eslint-disable-next-line @typescript-eslint/naming-convention
           max_tokens: 256,
           directory: selectedDirectory,
+          instructions: {
+            personalization: typeof window !== 'undefined'
+              ? window.electronAPI.fetchSetting('personalization')
+              : '',
+            response: typeof window !== 'undefined'
+              ? window.electronAPI.fetchSetting('customResponse')
+              : '',
+          },
         }),
       });
       dispatch(stopWaitingForResponse());
