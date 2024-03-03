@@ -23,6 +23,7 @@
     "lint": "npx eslint --max-warnings 0 --ext=.ts ."
   },
   "dependencies": {
+    "@electron/osx-sign": "^1.0.5",
     "@fortawesome/fontawesome-free": "^6.5.1",
     "@fortawesome/fontawesome-svg-core": "^6.5.1",
     "@fortawesome/free-regular-svg-icons": "^6.5.1",
@@ -64,9 +65,11 @@
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",
+    "dotenv": "^16.4.5",
     "dprint": "^0.45.0",
     "electron": "^26.2.0",
     "electron-builder": "^24.6.4",
+    "electron-notarize": "^1.2.2",
     "eslint": "^8.56.0",
     "eslint-config-airbnb-base": "^15.0.0",
     "eslint-plugin-compat": "^4.2.0",
@@ -85,6 +88,7 @@
   "build": {
     "appId": "mlx-chat",
     "productName": "MLX Chat",
+    "afterSign": "notarize.js",
     "win": {
       "target": [
         "nsis"
@@ -101,15 +105,27 @@
       "target": [
         "dmg"
       ],
-      "icon": "assets/icon.icns"
+      "gatekeeperAssess": false,
+      "hardenedRuntime": true,
+      "icon": "assets/icon.icns",
+      "entitlements": "./mac/entitlements.mac.inherit.plist",
+      "entitlementsInherit": "./mac/entitlements.mac.inherit.plist"
     },
     "dmg": {
-      "title": "MLX Chat Installer"
+      "title": "MLX Chat Installer",
+      "sign": false
     },
     "extraFiles": [
       {
         "from": "assets",
         "to": "resources",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "../dist",
+        "to": "resources/server",
         "filter": [
           "**/*"
         ]

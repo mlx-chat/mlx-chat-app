@@ -1,7 +1,8 @@
 import json
+import os
 import time
 import uuid
-import argparse
+import sys
 
 import mlx.core as mx
 import mlx.nn as nn
@@ -119,6 +120,13 @@ class APIHandler(BaseHTTPRequestHandler):
                     directory: str
                 }
 
+        Endpoint: /api/init
+            Desc: initializes the model
+            Body:
+                {
+                    model: str
+                }
+
         Endpoint: /api/query
             Desc: handles messages requests (with directory index)
             Body:
@@ -137,6 +145,7 @@ class APIHandler(BaseHTTPRequestHandler):
             method = {
                 '/api/index': self.index,
                 '/api/query': self.query,
+                '/api/init': self.init,
             }
             handle = method.get(self.path, None)
             if handle is None:
@@ -157,6 +166,11 @@ class APIHandler(BaseHTTPRequestHandler):
         directory = body.get('directory', None)
         index_directory(directory)
         return {'directory': directory}
+
+    def init(self, body):
+        model = body.get('model', None)
+        load_model(model)
+        return {'model': model}
 
     def query(self, body):
         chat_id = f'chatcmpl-{uuid.uuid4()}'
@@ -211,40 +225,36 @@ class APIHandler(BaseHTTPRequestHandler):
 def run(host: str, port: int, server_class=HTTPServer, handler_class=APIHandler):
     server_address = (host, port)
     httpd = server_class(server_address, handler_class)
-    print(f'Starting httpd at {host} on port {port}...')
+    print(f'Starting httpd at {host} on port {port}...', flush=True)
     httpd.serve_forever()
 
 
 def main():
-    parser = argparse.ArgumentParser(description='MLX Http Server.')
-    parser.add_argument(
-        '--model',
-        type=str,
-        required=True,
-        help='The path to the MLX model weights, tokenizer, and config',
-    )
-    parser.add_argument(
-        '--adapter-file',
-        type=str,
-        help='Optional path for the trained adapter weights.',
-    )
-    parser.add_argument(
-        '--host',
-        type=str,
-        default='127.0.0.1',
-        help='Host for the HTTP server (default: 127.0.0.1)',
-    )
-    parser.add_argument(
-        '--port',
-        type=int,
-        default=8080,
-        help='Port for the HTTP server (default: 8080)',
-    )
-    args = parser.parse_args()
+    if len(sys.argv) < 2:
+        print(
+            "Usage: python script.py [--host <host_address>] [--port <port_number>]")
+        sys.exit(1)
 
-    load_model(args.model, adapter_file=args.adapter_file)
-    print(f'>> starting server on {args.host}:{args.port}', flush=True)
-    run(args.host, args.port)
+    args = {
+        '--host': '127.0.0.1',
+        '--port': 8080
+    }
+
+    i = 1
+    while i < len(sys.argv):
+        if sys.argv[i] in args:
+            args[sys.argv[i]] = sys.argv[i + 1]
+            i += 2
+        else:
+            print(f"Unknown argument: {sys.argv[i]}")
+            sys.exit(1)
+
+    # Now you can access the parsed arguments using args dictionary
+    host = args['--host']
+    port = int(args['--port'])
+
+    print(f'>> starting server on {host}:{port}', flush=True)
+    run(host, port)
 
 
 if __name__ == '__main__':
