@@ -186,7 +186,7 @@ const store = new Store({
     },
     model: {
       type: 'string',
-      default: 'mlx-community/quantized-gemma-7b-it',
+      default: 'mistralai/Mistral-7B-Instruct-v0.2',
     },
     personalization: {
       type: 'string',

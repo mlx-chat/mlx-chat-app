@@ -1,7 +1,8 @@
+import os
+import sys
 import json
 import time
 import uuid
-import sys
 
 import mlx.core as mx
 import mlx.nn as nn
@@ -10,7 +11,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from typing import Optional
 from transformers import PreTrainedTokenizer
 
-from .utils import load, generate_step
+from .utils import load, generate_step, get_mlx_path, convert
 
 from .retriever.loader import directory_loader
 from .retriever.splitter import RecursiveCharacterTextSplitter
@@ -25,7 +26,15 @@ _database: Optional[Chroma] = None
 def load_model(model_path: str, adapter_file: Optional[str] = None):
     global _model
     global _tokenizer
-    _model, _tokenizer = load(model_path, adapter_file=adapter_file)
+
+    models_to_quantize = ['mistral', 'llama']
+    quantize = any(variable in model_path for variable in models_to_quantize)
+
+    mlx_path = get_mlx_path(model_path, quantize=quantize)
+    if not os.path.isdir(mlx_path):
+        convert(model_path, mlx_path, quantize=quantize)
+
+    _model, _tokenizer = load(mlx_path, adapter_file=adapter_file)
 
 
 def index_directory(directory: str, use_embedding: bool = True):
@@ -35,7 +44,7 @@ def index_directory(directory: str, use_embedding: bool = True):
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=512, chunk_overlap=32, add_start_index=True
     )
-    embedding = E5Embeddings() if use_embedding else ChatEmbeddings(
+    embedding = E5Embeddings(quantize=True) if use_embedding else ChatEmbeddings(
         model=_model.model, tokenizer=_tokenizer)
     splits = text_splitter.split_documents(raw_docs)
     _database = Chroma.from_documents(

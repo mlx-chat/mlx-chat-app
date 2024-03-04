@@ -28,6 +28,7 @@ const SelectModel = ({
         <SelectGroup>
           <SelectLabel>AI Model</SelectLabel>
           <SelectItem value='llama'>LLama</SelectItem>
+          <SelectItem value='mistralai/Mistral-7B-Instruct-v0.2'>Mistral</SelectItem>
           <SelectItem value='mlx-community/quantized-gemma-7b-it'>Gemma</SelectItem>
         </SelectGroup>
       </SelectContent>

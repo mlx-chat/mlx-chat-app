@@ -549,10 +549,10 @@ def quantize_model(
     return quantized_weights, quantized_config
 
 
-def get_mlx_path(hf_path: str) -> str:
+def get_mlx_path(hf_path: str, quantize: bool = False) -> str:
     default_home = os.path.join(os.path.expanduser("~"), ".cache")
     return os.path.join(
-        default_home, 'huggingface', 'hub', f'models--{hf_path.replace("/", "--")}-mlx')
+        default_home, 'huggingface', 'hub', f'models--{hf_path.replace("/", "--")}-mlx{"-q" if quantize else ""}')
 
 
 def convert(
@@ -565,7 +565,7 @@ def convert(
     upload_repo: str = None,
     delete_old: bool = True,
 ):
-    print("[INFO] Loading")
+    print("[INFO] Loading", flush=True)
     model_path = get_model_path(hf_path)
     print(model_path, flush=True)
     model, config, tokenizer = fetch_from_hub(model_path, lazy=True)
@@ -575,17 +575,17 @@ def convert(
     weights = {k: v.astype(dtype) for k, v in weights.items()}
 
     if quantize:
-        print("[INFO] Quantizing")
+        print("[INFO] Quantizing", flush=True)
         model.load_weights(list(weights.items()))
         weights, config = quantize_model(model, config, q_group_size, q_bits)
 
     if mlx_path is None:
-        mlx_path = get_mlx_path(hf_path)
+        mlx_path = get_mlx_path(hf_path, quantize)
 
     if isinstance(mlx_path, str):
         mlx_path = Path(mlx_path)
 
-    print(f"[INFO] Saving to {mlx_path}")
+    print(f"[INFO] Saving to {mlx_path}", flush=True)
 
     del model
     save_weights(mlx_path, weights, donate_weights=True)

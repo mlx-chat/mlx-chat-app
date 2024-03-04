@@ -9,6 +9,7 @@ hidden_imports=(
   "server.models"
   "server.models.gemma"
   "server.models.bert"
+  "server.models.llama"
 )
 
 exclude_modules=(
