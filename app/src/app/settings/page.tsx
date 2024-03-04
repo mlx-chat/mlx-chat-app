@@ -127,25 +127,47 @@ function GeneralSettings() {
 }
 
 function PromptSettings() {
-  const [instructions, setInstructions] = React.useState<string>(
-    typeof window !== 'undefined' ? window.electronAPI.fetchSetting('customInstructions') : '',
+  const [personalization, setPersonalization] = React.useState<string>(
+    typeof window !== 'undefined' ? window.electronAPI.fetchSetting('personalization') : '',
+  );
+  const [response, setResponse] = React.useState<string>(
+    typeof window !== 'undefined' ? window.electronAPI.fetchSetting('customResponse') : '',
   );
 
   return (
-    <div className='flex flex-col justify-center w-full items-center'>
+    <div className='flex flex-col justify-center w-full items-center gap-4'>
       <div className='flex flex-col items-center mt-2 gap-2'>
-        <p className='text-sm flex-shrink-0 font-bold'>Custom Instructions</p>
+        <p className='text-sm flex-shrink-0 font-bold'>Personalization</p>
         <Textarea
           className='bg-[#C9C9C9] dark:bg-[#252523] border-[#B5B5B5] dark:border-[#3B3B39] border resize-none w-[300px]'
-          value={instructions}
+          value={personalization}
           onChange={(e) => {
-            setInstructions(e.target.value);
+            setPersonalization(e.target.value);
             if (typeof window !== 'undefined') {
-              window.electronAPI.updateSetting('customInstructions', e.target.value);
+              window.electronAPI.updateSetting('personalization', e.target.value);
             }
           }}
           rows={5}
-          placeholder='Type your custom instructions here...'
+          placeholder={`Things to know about you... e.g.,
+  - I enjoy thought provoking conversation
+  - I am a fan of the arts and culture`}
+        />
+      </div>
+      <div className='flex flex-col items-center mt-2 gap-2'>
+        <p className='text-sm flex-shrink-0 font-bold'>Custom Response</p>
+        <Textarea
+          className='bg-[#C9C9C9] dark:bg-[#252523] border-[#B5B5B5] dark:border-[#3B3B39] border resize-none w-[300px]'
+          value={response}
+          onChange={(e) => {
+            setResponse(e.target.value);
+            if (typeof window !== 'undefined') {
+              window.electronAPI.updateSetting('customResponse', e.target.value);
+            }
+          }}
+          rows={5}
+          placeholder={`How to format responses... e.g.,
+  - Respond in a concise manner
+  - Do not use slang`}
         />
       </div>
     </div>

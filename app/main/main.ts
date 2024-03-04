@@ -14,6 +14,7 @@ import {
   nativeImage,
   Tray,
 } from 'electron';
+import * as contextMenu from 'electron-context-menu';
 import Store from 'electron-store';
 import * as net from 'net';
 
@@ -158,6 +159,10 @@ if (isProd) {
   app.setPath('userData', `${app.getPath('userData')} (development)`);
 }
 
+contextMenu.default({
+  showInspectElement: !isProd,
+});
+
 let openModal: 'settings' | 'directory' | null = null;
 
 let globalWindow: BrowserWindow | null = null;
@@ -183,7 +188,11 @@ const store = new Store({
       type: 'string',
       default: 'mlx-community/quantized-gemma-7b-it',
     },
-    customInstructions: {
+    personalization: {
+      type: 'string',
+      default: '',
+    },
+    customResponse: {
       type: 'string',
       default: '',
     },
@@ -337,6 +346,28 @@ const createWindow = () => {
             createSettings();
           },
           accelerator: 'Cmd+,',
+        },
+      ],
+    },
+    {
+      label: 'Edit',
+      submenu: [
+        { role: 'undo' },
+        { role: 'redo' },
+        { type: 'separator' },
+        { role: 'cut' },
+        { role: 'copy' },
+        { role: 'paste' },
+        { role: 'pasteAndMatchStyle' },
+        { role: 'delete' },
+        { role: 'selectAll' },
+        { type: 'separator' },
+        {
+          label: 'Speech',
+          submenu: [
+            { role: 'startSpeaking' },
+            { role: 'stopSpeaking' },
+          ],
         },
       ],
     },
