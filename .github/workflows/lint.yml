@@ -1,10 +1,10 @@
-name: PR Checks
+name: Lint
 
 on: [pull_request]
 
 jobs:
   lint:
-    name: Lint App
+    name: Lint
     runs-on: ubuntu-latest
 
     steps:
