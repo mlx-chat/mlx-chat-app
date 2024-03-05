@@ -47,7 +47,7 @@ const Chat = ({
             : newHistory.filter((chat) => chat.role !== 'system'),
           temperature: 0.7,
           // eslint-disable-next-line @typescript-eslint/naming-convention
-          top_p: 0.95,
+          top_p: 1.0,
           // eslint-disable-next-line @typescript-eslint/naming-convention
           max_tokens: 200,
           directory: selectedDirectory,
