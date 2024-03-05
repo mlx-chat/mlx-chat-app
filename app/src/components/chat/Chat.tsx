@@ -43,9 +43,11 @@ const Chat = ({
         },
         body: JSON.stringify({
           messages: selectedDirectory ? [{ role: 'user', content: message }] : newHistory,
-          temperature: 1.0,
+          temperature: 0.7,
           // eslint-disable-next-line @typescript-eslint/naming-convention
-          max_tokens: 256,
+          top_p: 0.95,
+          // eslint-disable-next-line @typescript-eslint/naming-convention
+          max_tokens: 200,
           directory: selectedDirectory,
           instructions: {
             personalization: typeof window !== 'undefined'
