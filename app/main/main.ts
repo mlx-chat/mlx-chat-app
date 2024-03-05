@@ -185,7 +185,7 @@ const store = new Store({
     },
     model: {
       type: 'string',
-      default: 'google/gemma-7b-it',
+      default: 'mistralai/Mistral-7B-Instruct-v0.2',
     },
     personalization: {
       type: 'string',
@@ -427,8 +427,7 @@ app.whenReady().then(() => {
   });
 });
 
-// @ts-expect-error -- We don't have types for electron
-app.on('will-quit', (event) => {
+app.on('will-quit', () => {
   exec(
     `lsof -i :${serverManager.port} -P | awk 'NR>1 {print $2}' | xargs kill`,
     (err, stdout, stderr) => {

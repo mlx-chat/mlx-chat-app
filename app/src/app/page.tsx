@@ -45,7 +45,7 @@ export default function Home() {
   }
 
   useEffect(() => {
-    window.electronAPI.onSelectDirectory(async (customData) => {
+    window.electronAPI.onSelectDirectory(async (customData: string[]) => {
       setSelectedDirectory(customData[0]);
       try {
         dispatch(startDirectoryIndexing());
@@ -69,7 +69,7 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    window.electronAPI.onSelectDirectory(async (customData) => {
+    window.electronAPI.onSelectDirectory(() => {
       if (chatHistory.length) {
         setChatHistory([
           ...chatHistory,
