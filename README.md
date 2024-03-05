@@ -14,7 +14,7 @@ Our high-level features include:
 
 :warning: **Preliminary Steps**: we are working to release with correct packaging ([pyinstaller](https://github.com/pyinstaller/pyinstaller/) & [electron-builder](https://github.com/electron-userland/electron-builder)) and authentication ([Apple codesign](https://developer.apple.com/support/code-signing/)). In the interium, please clone and run in development by first setting up authentication and requirements. 
 
-First, setup huggingface [access tokens](https://huggingface.co/settings/tokens) to download models
+First, setup huggingface [access tokens](https://huggingface.co/settings/tokens) to download models (request access to [google/gemma-7b-it](https://huggingface.co/google/gemma-7b-it)), then
 ```bash
 huggingface-cli login
 ```
