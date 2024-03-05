@@ -25,7 +25,7 @@ pip install -r server/requirements.txt
 ```
 Finally, start the application
 ```bash
-cd app; npm run dev
+cd app && npm run dev
 ```
 
 ## Contributions
