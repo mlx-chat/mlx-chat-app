@@ -93,12 +93,24 @@ def format_messages(messages: List[Dict], indexed_files: Optional[str], instruct
     style = response if response else 'technical, accurate, and professional'
 
     messages[-1]['content'] = f"""
-Context: you are a personalized AI chatbot {context}
-Objective: respond to the following, {messages[-1]['content']}
-Style: {style}
-Tone: friendly, helpful, and confident
-Audience: {audience}
-Response: brief, concise, and to the point. Please don't start with "Sure, ..."
+<Context>
+  you are my personalized AI chatbot {context}
+</Context>
+<Objective>
+  respond to the following: {messages[-1]['content']}
+</Objective>
+<Style>
+  {style}
+</Style>
+<Tone>
+  friendly, helpful, and confident
+</Tone>
+<Audience>
+  {audience}
+</Audience>
+<Response>
+  brief, concise, and to the point. Please don't start with "Sure, ..."
+</Response>
 """.strip()
 
 
@@ -192,7 +204,7 @@ class APIHandler(BaseHTTPRequestHandler):
             # emperically better than `similarity_search`
             docs = _database.max_marginal_relevance_search(
                 messages[-1]['content'],
-                k=4  # number of documents to return
+                k=6  # number of documents to return
             )
             indexed_files = '\n'.join([doc.page_content for doc in docs])
 

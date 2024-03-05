@@ -47,12 +47,6 @@ export default function Home() {
   useEffect(() => {
     window.electronAPI.onSelectDirectory(async (customData) => {
       setSelectedDirectory(customData[0]);
-      if (chatHistory.length) {
-        setChatHistory([
-          ...chatHistory,
-          { role: 'system', content: 'Assist' },
-        ]);
-      }
       try {
         dispatch(startDirectoryIndexing());
         await fetch('http://localhost:8080/api/index', {
@@ -70,6 +64,17 @@ export default function Home() {
         // eslint-disable-next-line no-console
         console.error('Error sending message: ', error);
         dispatch(stopDirectoryIndexing());
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    window.electronAPI.onSelectDirectory(async (customData) => {
+      if (chatHistory.length) {
+        setChatHistory([
+          ...chatHistory,
+          { role: 'system', content: 'Assist' },
+        ]);
       }
     });
   }, [chatHistory]);
