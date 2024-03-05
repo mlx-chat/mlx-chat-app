@@ -186,7 +186,7 @@ const store = new Store({
     },
     model: {
       type: 'string',
-      default: 'mistralai/Mistral-7B-Instruct-v0.2',
+      default: 'google/gemma-7b-it',
     },
     personalization: {
       type: 'string',

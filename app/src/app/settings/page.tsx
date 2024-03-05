@@ -81,7 +81,7 @@ function GeneralSettings() {
   const [model, setModel] = React.useState<string>(
     typeof window !== 'undefined'
       ? window.electronAPI.fetchSetting('model')
-      : 'mistralai/Mistral-7B-Instruct-v0.2',
+      : 'google/gemma-7b-it',
   );
 
   useEffect(() => {
