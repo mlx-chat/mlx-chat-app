@@ -116,7 +116,6 @@ function GeneralSettings() {
           handleModelChange={(selectedModel) => {
             setModel(selectedModel);
             if (typeof window !== 'undefined' && selectedModel) {
-              window.electronAPI.startServer(selectedModel);
               window.electronAPI.updateSetting('model', selectedModel);
             }
           }}

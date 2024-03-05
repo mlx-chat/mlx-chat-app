@@ -47,6 +47,12 @@ export default function Home() {
   useEffect(() => {
     window.electronAPI.onSelectDirectory(async (customData) => {
       setSelectedDirectory(customData[0]);
+      if (chatHistory.length) {
+        setChatHistory([
+          ...chatHistory,
+          { role: 'system', content: 'Assist' },
+        ]);
+      }
       try {
         dispatch(startDirectoryIndexing());
         await fetch('http://localhost:8080/api/index', {
@@ -66,7 +72,7 @@ export default function Home() {
         dispatch(stopDirectoryIndexing());
       }
     });
-  }, []);
+  }, [chatHistory]);
 
   const handleClearHistory = () => {
     setChatHistory([]);
@@ -77,6 +83,12 @@ export default function Home() {
 
   const clearDirectory = () => {
     setSelectedDirectory(null);
+    if (chatHistory.length) {
+      setChatHistory([
+        ...chatHistory,
+        { role: 'system', content: 'Converse' },
+      ]);
+    }
   };
 
   return (

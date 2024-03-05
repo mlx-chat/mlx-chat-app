@@ -32,7 +32,7 @@ const Chat = ({
       }
       const newHistory = [
         ...chatHistory,
-        { role: 'user', content: message },
+        { role: 'user' as const, content: message },
       ];
       setChatHistory(newHistory);
       dispatch(startWaitingForResponse());
@@ -42,7 +42,9 @@ const Chat = ({
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          messages: selectedDirectory ? [{ role: 'user', content: message }] : newHistory,
+          messages: selectedDirectory
+            ? [{ role: 'user', content: message }]
+            : newHistory.filter((chat) => chat.role !== 'system'),
           temperature: 0.7,
           // eslint-disable-next-line @typescript-eslint/naming-convention
           top_p: 0.95,
