@@ -82,7 +82,6 @@ class ServerManager {
 
         this.serverProcess.stdout.on('data', async (data: Buffer) => {
           const output = data.toString('utf8');
-          console.log('Server output:', output);
 
           await new Promise((resolve) => setTimeout(resolve, 1000));
 
@@ -271,6 +270,9 @@ const createWindow = () => {
     if (openModal === 'directory') {
       return;
     }
+    if (win.webContents.isDevToolsOpened()) {
+      return;
+    }
     globalShortcut.unregister('Escape');
     globalShortcut.unregister('Cmd+Q');
     win.hide();
@@ -389,13 +391,6 @@ app.whenReady().then(() => {
       openModal = null;
       event.sender.send('selected-directory', result.filePaths);
     });
-  });
-
-  ipcMain.on('start-server', (event: any, model: string) => {
-    event;
-    serverManager.start(model)
-      .then(() => console.log('Server started successfully'))
-      .catch(error => console.error('Error starting server:', error));
   });
 
   ipcMain.on('resize-window', (event, arg) => {

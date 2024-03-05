@@ -1,3 +1,4 @@
+/* eslint-disable function-paren-newline */
 import {
   faCircleNotch,
 } from '@fortawesome/free-solid-svg-icons';
@@ -14,6 +15,7 @@ import {
   useAppSelector,
 } from '../../lib/hooks';
 import Message from './ChatMessage';
+import SystemMessage from './SystemMessage';
 
 const ChatMessages = ({
   chatHistory,
@@ -49,13 +51,21 @@ const ChatMessages = ({
   }, [chatHistory]);
   return chatHistory.length
     ? (
-      <div ref={messagesRef} className='flex flex-col flex-grow gap-4 p-4 overflow-y-scroll'>
-        {chatHistory.map((message, index) => (
-          <Message
-            key={index}
-            message={message}
-          />
-        ))}
+      <div ref={messagesRef} className='flex flex-col flex-grow p-4 gap-4 overflow-y-scroll'>
+        {chatHistory.map((message, index) => (message.role !== 'system'
+          ? (
+            <Message
+              key={index}
+              message={message}
+            />
+          )
+          : (
+            <SystemMessage
+              key={index}
+              message={message}
+            />
+          ))
+        )}
         {isWaitingForResponse
           ? (
             <div
