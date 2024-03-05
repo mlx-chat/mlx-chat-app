@@ -81,7 +81,7 @@ function GeneralSettings() {
   const [model, setModel] = React.useState<string>(
     typeof window !== 'undefined'
       ? window.electronAPI.fetchSetting('model')
-      : 'mlx-community/quantized-gemma-7b-it',
+      : 'google/gemma-7b-it',
   );
 
   useEffect(() => {

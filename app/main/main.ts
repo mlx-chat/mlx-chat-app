@@ -186,7 +186,7 @@ const store = new Store({
     },
     model: {
       type: 'string',
-      default: 'mlx-community/quantized-gemma-7b-it',
+      default: 'google/gemma-7b-it',
     },
     personalization: {
       type: 'string',

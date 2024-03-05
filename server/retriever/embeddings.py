@@ -2,7 +2,7 @@ import os
 import mlx.core as mx
 import mlx.nn as nn
 
-from transformers import AutoModel, AutoTokenizer, PreTrainedTokenizer
+from transformers import PreTrainedTokenizer
 from abc import ABC, abstractmethod
 from typing import Any, List
 
@@ -26,10 +26,10 @@ class E5Embeddings(Embeddings):
     model: Any = None
     tokenizer: PreTrainedTokenizer = None
 
-    def __init__(self, hf_path: str = 'intfloat/multilingual-e5-small'):
-        mlx_path = get_mlx_path(hf_path)
+    def __init__(self, hf_path: str = 'intfloat/multilingual-e5-small', quantize: bool = False):
+        mlx_path = get_mlx_path(hf_path, quantize=quantize)
         if not os.path.isdir(mlx_path):
-            convert(hf_path, mlx_path)
+            convert(hf_path, mlx_path, quantize=quantize)
         self.model, self.tokenizer = load(mlx_path)
 
     def _average_pool(self, last_hidden_states: mx.array,

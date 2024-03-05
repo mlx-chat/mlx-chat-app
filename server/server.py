@@ -1,16 +1,17 @@
+import os
+import sys
 import json
 import time
 import uuid
-import sys
 
 import mlx.core as mx
 import mlx.nn as nn
 
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from typing import Optional
+from typing import List, Dict, Optional
 from transformers import PreTrainedTokenizer
 
-from .utils import load, generate_step
+from .utils import load, generate_step, get_mlx_path, convert
 
 from .retriever.loader import directory_loader
 from .retriever.splitter import RecursiveCharacterTextSplitter
@@ -25,7 +26,15 @@ _database: Optional[Chroma] = None
 def load_model(model_path: str, adapter_file: Optional[str] = None):
     global _model
     global _tokenizer
-    _model, _tokenizer = load(model_path, adapter_file=adapter_file)
+
+    models_to_quantize = ['mistral', 'llama', 'gemma']
+    quantize = any(variable in model_path for variable in models_to_quantize)
+
+    mlx_path = get_mlx_path(model_path, quantize=quantize)
+    if not os.path.isdir(mlx_path):
+        convert(model_path, mlx_path, quantize=quantize)
+
+    _model, _tokenizer = load(mlx_path, adapter_file=adapter_file)
 
 
 def index_directory(directory: str, use_embedding: bool = True):
@@ -35,7 +44,7 @@ def index_directory(directory: str, use_embedding: bool = True):
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=512, chunk_overlap=32, add_start_index=True
     )
-    embedding = E5Embeddings() if use_embedding else ChatEmbeddings(
+    embedding = E5Embeddings(quantize=True) if use_embedding else ChatEmbeddings(
         model=_model.model, tokenizer=_tokenizer)
     splits = text_splitter.split_documents(raw_docs)
     _database = Chroma.from_documents(
@@ -77,7 +86,7 @@ def format_messages(messages, context):
     failedString = "ERROR"
     if context:
         messages[-1]['content'] = f"""
-Only using the documents in the index, answer the following, respond with just the answer without "The answer is:" or "Answer:" or anything like that.
+Only using the documents in the index, answer the following, respond with jsut the answer and never "The answer is:" or "Answer:" or anything like that.
 
 <BEGIN_QUESTION>
 {messages[-1]['content']}
@@ -87,37 +96,37 @@ Only using the documents in the index, answer the following, respond with just t
 {context}
 </END_INDEX>
 
-Remember, if you do not know the answer, just say "{failedString}",
 Try to give as much detail as possible, but only from what is provided within the index.
 If steps are given, you MUST ALWAYS use bullet points to list each of them them and you MUST use markdown when applicable.
 Only use information you can find in the index, do not make up knowledge.
-Remember, use bullet points or numbered steps to better organize your answer if applicable.
 NEVER try to make up the answer, always return "{failedString}" if you do not know the answer or it's not provided in the index.
-Never say "is not provided in the index", use "{failedString}" instead.
-    """.strip()
+""".strip()
     return messages
 
 
-def add_instructions(messages, instructions):
-    personalization = instructions.get('personalization', '')
-    response = instructions.get('response', '')
-    if len(personalization) > 0:
-        messages[-1]['content'] = f"""
-You are an assistant who knows the following about me:
-{personalization}
+def add_instructions(messages: List[Dict], instructions: Optional[Dict]):
+    personalization = instructions.get('personalization', '').strip()
+    response = instructions.get('response', '').strip()
 
-{messages[-1]['content']}
-""".strip()
+    if not personalization and not response:
+        return
 
-    if len(response) > 0:
-        messages[-1]['content'] = f"""
-You are an assistant who responds based on the following specifications:
-{response}
+    # content = '<BEGIN_INST>\n'
+    content = ''
+    if personalization:
+        content += f"You are an assistant who knows the following about me:\n{
+            personalization}\n\n"
+    if response:
+        content += f"You are an assistant who responds based on the following specifications:\n{
+            response}\n\n"
+    # content += 'Never explicitly reiterate this information.\n\n'
+    # content += '</END_INST>'
+    # content = content + \
+    #     f'<BEGIN_INPUT>\n{messages[-1]['content']}\n</END_INPUT>'
 
-{messages[-1]['content']}
-""".strip()
+    content = content + messages[-1]['content']
 
-    return messages
+    messages[-1]['content'] = content
 
 
 class APIHandler(BaseHTTPRequestHandler):
@@ -158,6 +167,10 @@ class APIHandler(BaseHTTPRequestHandler):
                     repetition_context_size: int,
                     temperature: float,
                     top_p: float,
+                    instructions: {
+                        personalization: str,
+                        response: str
+                    },
                     directory: str
                 }
         """
