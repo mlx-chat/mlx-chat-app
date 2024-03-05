@@ -82,51 +82,36 @@ def create_response(chat_id, prompt, tokens, text):
     return response
 
 
-def format_messages(messages, context):
-    failedString = "ERROR"
-    if context:
-        messages[-1]['content'] = f"""
-Only using the documents in the index, answer the following, respond with jsut the answer and never "The answer is:" or "Answer:" or anything like that.
+def format_messages(messages: List[Dict], indexed_files: Optional[str], instructions: Optional[Dict]):
+    personalization = instructions.get(
+        'personalization', '').strip().replace('\n', '; ')
+    response = instructions.get('response', '').strip().replace('\n', '; ')
 
-<BEGIN_QUESTION>
-{messages[-1]['content']}
-</END_QUESTION>
+    context = f"with background knowledge of {
+        indexed_files.strip().replace('\n', '; ')}" if indexed_files else ''
+    audience = personalization if personalization else 'general'
+    style = response if response else 'technical, accurate, and professional'
 
-<BEGIN_INDEX>
-{context}
-</END_INDEX>
-
-Try to give as much detail as possible, but only from what is provided within the index.
-If steps are given, you MUST ALWAYS use bullet points to list each of them them and you MUST use markdown when applicable.
-Only use information you can find in the index, do not make up knowledge.
-NEVER try to make up the answer, always return "{failedString}" if you do not know the answer or it's not provided in the index.
+    messages[-1]['content'] = f"""
+<Context>
+  you are my personalized AI chatbot {context}
+</Context>
+<Objective>
+  respond to the following: {messages[-1]['content']}
+</Objective>
+<Style>
+  {style}
+</Style>
+<Tone>
+  friendly, helpful, and confident
+</Tone>
+<Audience>
+  {audience}
+</Audience>
+<Response>
+  brief, concise, and to the point. Please don't start with "Sure, ..."
+</Response>
 """.strip()
-    return messages
-
-
-def add_instructions(messages: List[Dict], instructions: Optional[Dict]):
-    personalization = instructions.get('personalization', '').strip()
-    response = instructions.get('response', '').strip()
-
-    if not personalization and not response:
-        return
-
-    # content = '<BEGIN_INST>\n'
-    content = ''
-    if personalization:
-        content += f"You are an assistant who knows the following about me:\n{
-            personalization}\n\n"
-    if response:
-        content += f"You are an assistant who responds based on the following specifications:\n{
-            response}\n\n"
-    # content += 'Never explicitly reiterate this information.\n\n'
-    # content += '</END_INST>'
-    # content = content + \
-    #     f'<BEGIN_INPUT>\n{messages[-1]['content']}\n</END_INPUT>'
-
-    content = content + messages[-1]['content']
-
-    messages[-1]['content'] = content
 
 
 class APIHandler(BaseHTTPRequestHandler):
@@ -214,21 +199,22 @@ class APIHandler(BaseHTTPRequestHandler):
         messages = body.get('messages', [])
         instructions = body.get('instructions', None)
 
+        indexed_files = ''
         if directory:
             # emperically better than `similarity_search`
             docs = _database.max_marginal_relevance_search(
-                body['messages'][-1]['content'],
-                k=4  # number of documents to return
+                messages[-1]['content'],
+                k=6  # number of documents to return
             )
-            context = '\n'.join([doc.page_content for doc in docs])
-            format_messages(body['messages'], context)
+            indexed_files = '\n'.join([doc.page_content for doc in docs])
 
             print(body, flush=True)
             print(('\n'+'--'*10+'\n').join([
                 f'{doc.metadata}\n{doc.page_content}' for doc in docs]), flush=True)
 
-        add_instructions(messages, instructions)
+        format_messages(messages, indexed_files, instructions)
         print(messages, flush=True)
+
         prompt = mx.array(_tokenizer.encode(_tokenizer.apply_chat_template(
             messages,
             tokenize=False,
@@ -259,6 +245,11 @@ class APIHandler(BaseHTTPRequestHandler):
             tokens.append(token.item())
 
         text = _tokenizer.decode(tokens).replace(REPLACEMENT_CHAR, '')
+        # TODO: GEMMA IS OBSESSED WITH "Sure, ..."
+        if text.startswith('Sure, '):
+            text = text.split('\n')
+            text[0] = text[0].replace('Sure, ', '').capitalize()
+            text = '\n'.join([l for l in text])
         return create_response(chat_id, prompt, tokens, text)
 
 

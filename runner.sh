@@ -13,10 +13,6 @@ hidden_imports=(
 )
 
 exclude_modules=(
-  "torch"
-  "torchaudio"
-  "torchvision"
-  "tensorflow"
   "matplotlib"
   "pandas"
   "PIL"
