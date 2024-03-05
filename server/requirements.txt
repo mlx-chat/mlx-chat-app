@@ -1,5 +1,6 @@
-mlx>=0.4
-numpy
-transformers>=4.38.0
-protobuf
-pyyaml
+chromadb==0.4.23
+huggingface_hub==0.20.3
+mlx==0.4.0
+mlx_data==0.0.2
+transformers==4.38.1
+pyinstaller==6.4.0

@@ -7,7 +7,7 @@ import json
 import logging
 import time
 from pathlib import Path
-from typing import Any, Callable, Dict, Generator, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, Generator, Optional, Tuple, Union
 
 import mlx.core as mx
 import mlx.nn as nn
@@ -15,9 +15,6 @@ from mlx.utils import tree_flatten
 
 from huggingface_hub import snapshot_download
 from transformers import AutoConfig, AutoTokenizer, PreTrainedTokenizer
-
-# Local imports
-from .tuner.utils import apply_lora_layers
 
 # Constants
 MODEL_REMAPPING = {
@@ -382,7 +379,8 @@ def load(
 
     model = load_model(model_path, lazy)
     if adapter_file is not None:
-        model = apply_lora_layers(model, adapter_file)
+        # TODO: Apply LoRA layers
+        # model = apply_lora_layers(model, adapter_file)
         model.eval()
 
     tokenizer = AutoTokenizer.from_pretrained(model_path, **tokenizer_config)
