@@ -21,7 +21,7 @@ huggingface-cli login
 Then download the npm/python requirements
 ```bash
 cd app && npm install
-cd server && server requirements
+pip install -r server/requirements.txt
 ```
 Finally, start the application
 ```bash
