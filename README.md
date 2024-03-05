@@ -3,7 +3,7 @@
 ![](docs/design-logo-dark.png#gh-dark-mode-only)
 
 
-**Chat with MLX** is a high-performance MacOS application that connects your local documents to a personalized large language model (LLM). By leveraging retrieval-augmented generation (RAG), open source LLMs, and MLX for accelerated machine learning on Apple silicon, you can efficently search, query, and interact with your documents *without information ever leaving your device.*
+**Chat with MLX** is a high-performance macOS application that connects your local documents to a personalized large language model (LLM). By leveraging retrieval-augmented generation (RAG), open source LLMs, and MLX for accelerated machine learning on Apple silicon, you can efficently search, query, and interact with your documents *without information ever leaving your device.*
 
 Our high-level features include:
 - **Query**: load and search with document-specific prompts
