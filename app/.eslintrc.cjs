@@ -76,19 +76,18 @@ module.exports = {
     'plugin:jsdoc/recommended',
     'plugin:@typescript-eslint/recommended',
     'plugin:import/typescript',
-    'plugin:jest-formatting/recommended',
     'plugin:no-unsanitized/DOM',
-    // https://typescript-eslint.io/linting/troubleshooting/formatting#suggested-usage---prettier
   ],
   ignorePatterns: [
     'node_modules',
     'main',
+    '.eslintrc.*',
+    'out',
   ],
   overrides: [
     // Config files
     {
       files: [
-        '.eslintrc.*',
         'common/**/*.ts*',
         '**/app*config.ts',
         '**/app*Config.ts',
@@ -98,8 +97,6 @@ module.exports = {
         'sort-keys': ['error', 'asc', { minKeys: 2, natural: true }],
       },
     },
-
-    // Typescript-specific rules that don't apply to our .[mc]js files.
     {
       files: [
         '*.ts*',
@@ -129,23 +126,18 @@ module.exports = {
         }],
       },
     },
-
-    // typescript-eslint rules that require the TS parser.
     {
       files: [
         'src/**/*.ts*',
       ],
       rules: {
         '@typescript-eslint/await-thenable': 'error',
-        // Since common/ doesn't have a tsconfig yet, we need to explicitly set
-        // allowIndexSignaturePropertyAccess to true.
         '@typescript-eslint/dot-notation': ['error', { allowIndexSignaturePropertyAccess: true }],
         '@typescript-eslint/no-base-to-string': ['error', {
           ignoredTypeNames: ['Error', 'RegExp'],
         }],
         '@typescript-eslint/no-floating-promises': 'error',
         '@typescript-eslint/no-for-in-array': 'error',
-        // Disable `checksVoidReturn` fpr now as we have many violations.
         '@typescript-eslint/no-misused-promises': ['error', { checksVoidReturn: false }],
         '@typescript-eslint/no-throw-literal': 'error',
         '@typescript-eslint/no-unnecessary-condition': 'error',
@@ -156,14 +148,12 @@ module.exports = {
         '@typescript-eslint/prefer-string-starts-ends-with': 'error',
         '@typescript-eslint/require-await': 'error',
         '@typescript-eslint/space-infix-ops': 'error',
-        'dot-notation': 'off', // @typescript-eslint/dot-notation is used instead.
+        'dot-notation': 'off',
         'no-throw-literal': 'off',
-        'require-await': 'off', // @typescript-eslint/require-await is used instead.
+        'require-await': 'off',
         'space-infix-ops': 'off',
       },
     },
-
-    // TSX files
     {
       files: [
         '*.tsx',
@@ -174,66 +164,7 @@ module.exports = {
           ...tsxNamingConventions,
         ],
         '@typescript-eslint/require-await': 'error',
-        'require-await': 'off', // @typescript-eslint/require-await is used instead.
-      },
-    },
-
-    // Tests
-    {
-      files: [
-        '*.test.*',
-        'src/unit-tests/**/*',
-        'test/**/*',
-      ],
-      rules: {
-        '@typescript-eslint/require-await': 'off', // disable for tests due to false-positive mocks
-        'no-restricted-globals': ['error', {
-          message: 'Avoid using timers in tests.',
-          name: 'setInterval',
-        }, {
-          message: 'Avoid using timers in tests.',
-          name: 'setTimeout',
-        }],
-      },
-    },
-
-    // UI and perf tests
-    {
-      files: [
-        '*ui.test.*',
-        'src/ui-tests/**/*',
-        '*perf.test.*',
-      ],
-      rules: {
-        '@typescript-eslint/require-await': 'off', // disable for tests due to false-positive mocks
-        'no-restricted-globals': ['error', {
-          message: 'Avoid using timers - use DRIVER.wait instead if necessary',
-          name: 'setInterval',
-        }, {
-          message: 'Avoid using timers - use DRIVER.wait instead if necessary',
-          name: 'setTimeout',
-        }],
-      },
-    },
-
-    // Storybook stories
-    {
-      files: [
-        'src/**/*.stories.tsx',
-      ],
-      rules: {
-        '@typescript-eslint/naming-convention': [
-          ...namingConventions,
-          ...tsxNamingConventions,
-          {
-            filter: {
-              match: true,
-              regex: '^(Story|.*Component)$',
-            },
-            format: ['PascalCase', 'camelCase'],
-            selector: 'parameter',
-          },
-        ],
+        'require-await': 'off',
       },
     },
   ],
@@ -344,18 +275,15 @@ module.exports = {
     'no-restricted-properties': [
       'error',
     ],
-    // disallow certain syntax forms
-    // https://eslint.org/docs/rules/no-restricted-syntax
     'no-restricted-syntax': [
       'error',
     ],
-    'no-use-before-define': 'off', // Replaced with TS version.
+    'no-use-before-define': 'off',
     'no-void': ['error', { allowAsStatement: true }],
     'padding-line-between-statements': [
       'error',
       { blankLine: 'never', next: 'import', prev: 'import' },
     ],
-    /** Allow named functions since having the name in stack traces is useful. */
     'prefer-arrow-callback': ['error', { allowNamedFunctions: true }],
     'prefer-exponentiation-operator': 'off',
     'prefer-regex-literals': 'off',
