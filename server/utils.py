@@ -162,8 +162,7 @@ def generate_step(
         repetition_penalty < 0 or not isinstance(repetition_penalty, float)
     ):
         raise ValueError(
-            f"repetition_penalty must be a non-negative float, got {
-                repetition_penalty}"
+            f"repetition_penalty must be a non-negative float, got {repetition_penalty}"
         )
 
     y = prompt
