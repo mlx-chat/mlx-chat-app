@@ -87,8 +87,11 @@ def format_messages(messages: List[Dict], indexed_files: Optional[str], instruct
         'personalization', '').strip().replace('\n', '; ')
     response = instructions.get('response', '').strip().replace('\n', '; ')
 
-    context = f"with background knowledge of {
-        indexed_files.strip().replace('\n', '; ')}" if indexed_files else ''
+    bits = indexed_files.strip().replace('\n', '; ')
+    if indexed_files:
+      context = f"with background knowledge of {bits}"
+    else:
+      context = ''
     audience = personalization if personalization else 'general'
     style = response if response else 'technical, accurate, and professional'
 

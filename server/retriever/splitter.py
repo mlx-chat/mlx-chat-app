@@ -57,8 +57,7 @@ class TextSplitter(ABC):
                               every document
         """
         if chunk_overlap > chunk_size:
-            raise ValueError(f"Got a larger chunk overlap ({
-                             chunk_overlap}) than chunk size ({chunk_size}), should be smaller.")
+            raise ValueError(f"Got a larger chunk overlap ({chunk_overlap}) than chunk size ({chunk_size}), should be smaller.")
         self._chunk_size = chunk_size
         self._chunk_overlap = chunk_overlap
         self._length_function = length_function
